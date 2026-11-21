@@ -941,7 +941,26 @@ let TTS = null;
 const WEBVOICE = typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
 const hasVoice = () => !!TTS || WEBVOICE;
 function pickVoice() {
-  try { const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); return vs.find(v => /natural|neural|google|samantha|aria|jenny/i.test(v.name)) || vs[0] || null; } catch (e) { return null; }
+  try {
+    const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+    if (!vs.length) return null;
+    // Prefer by name: saved preference first, then ranked quality list
+    if (S.voiceName) {
+      const saved = vs.find(v => v.name === S.voiceName);
+      if (saved) return saved;
+    }
+    // Quality ranking: Neural/Natural > Google > named system voices > anything else
+    const rank = v => {
+      const n = v.name.toLowerCase();
+      if (/neural|natural/.test(n)) return 5;
+      if (/google/.test(n)) return 4;
+      if (/samantha|karen|daniel|moira|victoria|aria|jenny|zira|david/.test(n)) return 3;
+      if (/microsoft/.test(n)) return 2;
+      if (v.lang === 'en-US' || v.lang === 'en-GB') return 1;
+      return 0;
+    };
+    return vs.sort((a, b) => rank(b) - rank(a))[0];
+  } catch (e) { return null; }
 }
 function say(text) {
   if (!S.voice) return;
@@ -952,7 +971,7 @@ function say(text) {
     say.warned = true;
     setTimeout(() => { try { if (!speechSynthesis.getVoices().length) toast("🔇 No voice installed in this browser. Read the bubble, or see the README to turn the voice on."); } catch (e) {} }, 1200);
   }
-  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = (v && v.lang) || "en-US"; u.rate = 1; speechSynthesis.speak(u); } catch (e) {}
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = (v && v.lang) || "en-US"; u.rate = 1.1; u.pitch = 1.0; speechSynthesis.speak(u); } catch (e) {}
 }
 function hush() { try { TTS && TTS.stop(); } catch (e) {} try { WEBVOICE && speechSynthesis.cancel(); } catch (e) {} }
 const COLV = { ink: "--ink", blue: "--blue", red: "--red", green: "--green", orange: "--orange", purple: "--purple", muted: "--muted" };
@@ -1319,6 +1338,7 @@ function vMe(m) {
    <div class="field"><label for="ed1">Exam date</label><input type="date" id="ed1" value="${examDate()}"></div>
    <div class="field"><label for="gm">Daily goal (minutes)</label><select id="gm">${[10, 15, 20, 30, 45].map(v => `<option ${v === S.goalMin ? "selected" : ""}>${v}</option>`).join("")}</select></div>
    <label class="toggle"><input type="checkbox" id="snd" ${S.sound ? "checked" : ""}> Sounds</label>
+   ${WEBVOICE ? `<div class="field" style="margin-top:6px"><label for="vpick">Teacher voice</label><select id="vpick" style="max-width:100%"><option value="">Auto (best available)</option></select></div>` : ""}
    ${SUBJ?.id === "pcap" ? `<label class="toggle"><input type="checkbox" id="bon" ${S.bonus ? "checked" : ""}> Include PCAP-31-04 extras (turn off if your exam is 31-03)</label>` : ""}
    <label class="toggle" style="margin-top:6px"><span>Theme:</span><select id="th">${THEMES.map(([v, ic, name]) => `<option value="${v}" ${v === themePref ? "selected" : ""}>${ic} ${name}</option>`).join("")}</select></label>
    <p class="small muted" style="margin-top:10px">${syncState === "synced" ? "☁️ Progress syncs between your phone and laptop." : "💾 Progress is saved on this device. Sync available when signed in."}</p>
@@ -1328,6 +1348,23 @@ function vMe(m) {
   $("#snd").onchange = e => { S.sound = e.target.checked; save(true); };
   const bonEl = $("#bon"); if (bonEl) bonEl.onchange = e => { S.bonus = e.target.checked; save(true); };
   const unameEl = $("#uname"); if (unameEl) unameEl.onchange = e => { S.userName = e.target.value.trim(); save(true); toast("Name saved."); };
+  // populate voice picker
+  const vpick = $("#vpick");
+  if (vpick && WEBVOICE) {
+    const fillVoices = () => {
+      const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+      if (!vs.length) return;
+      vpick.innerHTML = `<option value="">Auto (best available)</option>` +
+        vs.map(v => `<option value="${esc(v.name)}" ${S.voiceName === v.name ? "selected" : ""}>${esc(v.name)} (${v.lang})</option>`).join("");
+    };
+    fillVoices();
+    speechSynthesis.onvoiceschanged = fillVoices;
+    vpick.onchange = e => {
+      S.voiceName = e.target.value || null;
+      save(true);
+      if (S.voiceName) say("Hi, I'm your new teacher voice.");
+    };
+  }
   $("#th").onchange = e => setTheme(e.target.value);
   $("#reset").onclick = () => { const mm = modal(`<h2>Reset everything?</h2><p>XP, streak, badges and all answers will be erased on every device.</p>`, `<button class="btn" data-close>Cancel</button><button class="btn red" data-really>Erase</button>`); mm.querySelector("[data-really]").onclick = () => { mm.remove(); const keep = { goalMin: S.goalMin }; S = Object.assign(fresh(), keep, { upd: Date.now(), resetAt: Date.now() }); save(true); render(); toast("Fresh start!"); }; };
 }
