@@ -597,7 +597,8 @@ const PCAP_MISSIONS = [
   { title: "Mock exam #2", sub: "aim for 75%+", tasks: [{ k: "mock", label: "Take a full mock exam" }] },
   { title: "Final review", sub: "the day before: mistakes + last mock", tasks: [{ k: "review", label: "Redo every question you missed", n: 25 }, { k: "mock", label: "Final mock exam" }] },
 ];
-function MISSIONS() { return C?.missions || PCAP_MISSIONS; }
+// Only PCAP uses the built-in plan; any other subject brings its own (content/<id>.json "missions"), or has none yet.
+function MISSIONS() { return C?.missions || (SUBJ?.id === "pcap" ? PCAP_MISSIONS : []); }
 function schedule() {
   const ed = examDate(), sd = startDate();
   if (!ed) return MISSIONS().map((_, i) => addDays(sd, i));
@@ -608,7 +609,7 @@ const taskDone = (mi, ti) => !!(bucket().tasks || {})[mi + ":" + ti];
 const missionDone = mi => MISSIONS()[mi].tasks.every((_, ti) => taskDone(mi, ti));
 function currentMission() { const i = MISSIONS().findIndex((_, mi) => !missionDone(mi)); return i < 0 ? MISSIONS().length : i; }
 function readTask(t) {
-  const b2 = bucket(); if (t.k === "boards") return { n: t.ids.filter(id => b2.boards[id]).length, tot: t.ids.length }; const ch = C.chapters.find(c => c.id === t.ch); let n = 0, tot = 0; for (let i = t.from; i <= Math.min(t.to, ch.lessons.length - 1); i++) { tot++; if (b2.lessons[t.ch + ":" + i]) n++; } return { n, tot }; }
+  const b2 = bucket(); if (t.k === "boards") return { n: t.ids.filter(id => b2.boards[id]).length, tot: t.ids.length }; const ch = C.chapters.find(c => c.id === t.ch); if (!ch) return { n: 0, tot: 1 }; let n = 0, tot = 0; for (let i = t.from; i <= Math.min(t.to, ch.lessons.length - 1); i++) { tot++; if (b2.lessons[t.ch + ":" + i]) n++; } return { n, tot }; }
 function syncReadTasks() {
   MISSIONS().forEach((m, mi) => m.tasks.forEach((t, ti) => { if ((t.k === "read" || t.k === "boards") && !taskDone(mi, ti)) { const r = readTask(t); if (r.n >= r.tot) { bucket().tasks[mi + ":" + ti] = TODAY(); } } }));
 }
@@ -675,6 +676,10 @@ function render() {
   if (!activeSubjectId) return vWelcome(m);
   if (!C) { m.innerHTML = `<div class="sticky tape" style="max-width:420px;margin:40px auto;text-align:center"><h2>Loading ${esc(SUBJ?.name || "subject")}…</h2><p class="muted">Getting the lessons and questions ready.</p></div>`; return; }
   if (quiz) return renderQuiz();
+  if (!(C.chapters || []).length && !(C.mcq || []).length && !["lab", "me"].includes(route)) { // subject added, content not built yet
+    m.innerHTML = `<div class="sticky b tape" style="max-width:480px;margin:40px auto;text-align:center"><div style="font-size:48px">${esc(SUBJ?.icon || "📚")}</div><h2>${esc(SUBJ?.name || "This subject")} is ready for its content</h2><p>No lessons or questions yet. Add the course files to <code>content/${esc(activeSubjectId)}.json</code> to fill it.</p><button class="btn blue big" id="backsubj">← Pick another subject</button></div>`;
+    $("#backsubj").onclick = () => $("#subjbtn").click(); return;
+  }
   ({ today: vToday, learn: vLearn, practice: vPractice, weak: vWeak, lab: vLab, me: vMe }[route] || vToday)(m);
 }
 
