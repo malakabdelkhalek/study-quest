@@ -223,17 +223,27 @@
         {
           "title": "1. What M is and why it exists",
           "t": "pbi.m",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>M</b> (Power Query Formula Language) is the language that runs behind every transformation you apply in Power Query Editor. Every click generates M code automatically.</li><li>You don't write M from scratch at first — the UI generates it. But reading M helps you understand what's happening and fix errors.</li><li><b>Why M exists:</b> Power BI needs a way to record transformations as a reproducible script so they can be re-applied every time the data refreshes. M is that script.</li><li><b>Where you see M:</b> Formula bar (one step at a time), Advanced Editor (full script), error messages.</li><li><span class='y'>Goal for now:</span> Read M confidently. Modify small parts. Write basic custom steps. Full M authoring comes with experience.</li></ul>"
         },
         {
-          "title": "2. let / in structure",
+          "title": "2. The let / in structure",
           "t": "pbi.m",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>Every M query has the same skeleton:<pre><code>let\n    Source = Csv.Document(File.Contents(\"file.csv\"), ...),\n    PromotedHeaders = Table.PromoteHeaders(Source),\n    ChangedTypes = Table.TransformColumnTypes(PromotedHeaders,\n        {{\"Product\", type text}, {\"Sales\", type number}})\nin\n    ChangedTypes</code></pre></li><li><code>let</code> starts the block. Each line is: <b>StepName = expression</b>.</li><li>Each step uses the previous step's result as input — that's why order matters.</li><li><code>in StepName</code> declares the final output — what gets loaded into the model.</li><li>Step names can contain spaces if wrapped in <code>#\"Step Name\"</code>:<pre><code>#\"Removed Columns\" = Table.RemoveColumns(Source, {\"Junk\"})</code></pre></li><li><span class='r'>Trap:</span> If you rename a step, every later step that references the old name breaks immediately.</li></ul>"
         },
         {
-          "title": "3. Common M functions",
+          "title": "3. Common M table functions",
           "t": "pbi.m",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>These are the M functions Power BI generates most often. Reading them becomes natural quickly.</li><li><code>Table.RemoveColumns(table, {\"col1\", \"col2\"})</code> — removes named columns.</li><li><code>Table.RenameColumns(table, {{\"Old\", \"New\"}})</code> — renames columns.</li><li><code>Table.TransformColumnTypes(table, {{\"col\", type number}})</code> — changes data types.</li><li><code>Table.SelectRows(table, each [Sales] > 0)</code> — filters rows. <code>each</code> means 'for each row'.</li><li><code>Table.PromoteHeaders(table)</code> — uses first row as column names.</li><li><code>Table.Transpose(table)</code> — transposes the table.</li><li><code>Table.UnpivotOtherColumns(table, {\"Product\"}, \"Month\", \"Sales\")</code> — unpivots all columns except Product.</li><li><code>Table.Pivot(table, List.Distinct(table[Month]), \"Month\", \"Sales\")</code> — pivots Month column.</li><li><span class='y'>Tip:</span> When you apply any of these via the ribbon, click the resulting step and read the formula bar. This is how you learn M naturally.</li></ul>"
+        },
+        {
+          "title": "4. The 'each' keyword and row context",
+          "t": "pbi.m",
+          "html": "<ul><li><code>each</code> is M shorthand for a function that runs once per row. It gives you access to the current row's values via <code>_</code> or column names in square brackets.</li><li><b>Filter rows where Sales &gt; 10:</b><pre><code>Table.SelectRows(Source, each [Sales] > 10)</code></pre></li><li><b>Add a custom column that doubles Sales:</b><pre><code>Table.AddColumn(Source, \"DoubleSales\", each [Sales] * 2)</code></pre></li><li><b>Conditional column:</b><pre><code>Table.AddColumn(Source, \"Category\",\n    each if [Sales] > 20 then \"High\" else \"Low\")</code></pre></li><li><span class='r'>Trap:</span> Column names in M are <b>case-sensitive</b>. <code>[sales]</code> and <code>[Sales]</code> are different columns. If you get a 'column not found' error, check the exact casing.</li></ul>"
+        },
+        {
+          "title": "5. Reading and editing M in the Advanced Editor",
+          "t": "pbi.m",
+          "html": "<ul><li>The <b>Advanced Editor</b> (Home → Advanced Editor) shows your full M script in one editable window. Use it to:</li><li><b>Rename a step</b> — change the name in the let block AND update all references to it in later steps.</li><li><b>Add a step manually</b> — add a new line in the let block referencing the previous step.</li><li><b>Copy a query</b> — copy the full M script and paste it into another query.</li><li><b>Example — manually adding a sort step:</b><pre><code>let\n    Source = ...,\n    Clean = Table.RemoveColumns(Source, {\"Junk\"}),\n    Sorted = Table.Sort(Clean, {{\"Sales\", Order.Descending}})\nin\n    Sorted</code></pre></li><li><span class='r'>Trap:</span> M is whitespace-sensitive in some contexts. Keep each step on its own line. End every step with a comma except the last one before <code>in</code>.</li></ul>"
         }
       ]
     },
@@ -245,17 +255,22 @@
         {
           "title": "1. What is a data model?",
           "t": "pbi.model",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>A <b>data model</b> is the set of tables in your Power BI file and the relationships between them. It is what DAX calculations run against.</li><li>Most real projects have multiple tables — a Sales table, a Products table, a Customers table, a Date table. The model connects them so you can analyze sales by product, by customer, or by month.</li><li>You build the model in the <b>Model view</b> (third icon in the left sidebar). Tables appear as boxes; relationships appear as lines connecting them.</li><li><span class='y'>Simple rule:</span> If all your data is in one table, you have no modeling to do. As soon as you have two tables that share an ID column, you need to define the relationship.</li></ul>"
         },
         {
           "title": "2. Primary keys and foreign keys",
           "t": "pbi.model",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Primary key</b> — a column that uniquely identifies each row in a table. No duplicates, no nulls. Example: ProductID in a Products table.</li><li><b>Foreign key</b> — a column in another table that references the primary key. Example: ProductID in a Sales table (each sale refers to one product).</li><li>The relationship connects the primary key table (Products) to the foreign key table (Sales) so Power BI can look up product details for each sale.</li><li><span class='r'>Trap:</span> If the foreign key column contains values that don't exist in the primary key table, you get a relationship error or missing data in your reports. Always check that IDs match between tables.</li></ul>"
         },
         {
-          "title": "3. Star schema",
+          "title": "3. Cardinality — one-to-many relationships",
           "t": "pbi.model",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Cardinality</b> describes how many rows in one table relate to rows in another.</li><li><b>One-to-many (1:*):</b> the most common. One product can appear in many sales. The '1' side has unique IDs (Products); the '*' side has repeating IDs (Sales).<br>In Model view Power BI shows <b>1</b> and <b>*</b> at the ends of the relationship line.</li><li><b>Many-to-many (*:*):</b> both tables have repeating values. Requires a bridge table. Avoid in beginner projects.</li><li><b>One-to-one (1:1):</b> rare. Each row in table A matches exactly one row in table B.</li><li><span class='r'>Trap:</span> If you accidentally create a many-to-many relationship where you intended one-to-many, DAX calculations will produce wrong results. Check cardinality in Model view.</li></ul>"
+        },
+        {
+          "title": "4. Star schema — the standard model structure",
+          "t": "pbi.model",
+          "html": "<ul><li>The <b>star schema</b> is the recommended model structure for Power BI. One central <b>fact table</b> surrounded by <b>dimension tables</b>.</li><li><b>Fact table</b> — contains measurements/transactions. Sales amounts, quantities, dates. Many rows, often millions. Example: Sales (OrderID, ProductID, CustomerID, DateID, Amount).</li><li><b>Dimension table</b> — describes the entities. Products (ProductID, Name, Category, Price). Customers (CustomerID, Name, City). Dates (DateID, Year, Month, Quarter).</li><li><b>Why star schema:</b> DAX calculations are simpler, faster, and more predictable. Filters flow naturally from dimension tables to the fact table.</li><li><span class='y'>For university TPs:</span> Even with one table you can apply star schema thinking. Split a wide table into a fact table and dimension tables in Power Query.</li></ul>"
         }
       ]
     },
@@ -267,22 +282,22 @@
         {
           "title": "1. What is DAX and when to use it",
           "t": "pbi.dax",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>DAX</b> (Data Analysis Expressions) is the formula language for calculations in the Power BI data model. You write DAX to create <b>measures</b> and <b>calculated columns</b>.</li><li><b>When to use DAX:</b> when you need a calculation that depends on filters, selections, or aggregations across the loaded data. Total sales, % of total, year-over-year growth, running totals.</li><li><b>When NOT to use DAX:</b> when you can do it in Power Query instead (cleaning, reshaping, type changes). Power Query runs before loading; DAX runs at query time — DAX on big tables is slower.</li><li><span class='r'>Rule:</span> If the operation changes the shape or content of a table → Power Query. If it computes a value from existing columns → DAX.</li></ul>"
         },
         {
           "title": "2. Measures vs calculated columns",
           "t": "pbi.dax",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Measure</b> — a DAX formula that calculates a value <i>dynamically</i> based on whatever filters are active in the report (slicers, page filters, visual filters). It has no fixed value — it recalculates every time the context changes.</li><li>Example: <code>Total Sales = SUM(Sales[Amount])</code> — shows the total for the currently filtered products/dates.</li><li><b>Calculated column</b> — a DAX formula that adds a new column to a table. The value is fixed for each row and stored in the model.</li><li>Example: <code>Profit = Sales[Amount] - Sales[Cost]</code> — adds a Profit column to the Sales table.</li><li><span class='r'>When to use which:</span> Use measures for aggregations (totals, averages, ratios) that change with filters. Use calculated columns for row-level values that don't depend on filters (category labels, calculated fields per row). Prefer measures — they're more flexible and use less memory.</li></ul>"
         },
         {
-          "title": "3. SUM, AVERAGE, COUNT",
+          "title": "3. Basic aggregation functions",
           "t": "pbi.dax",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>These are the most-used DAX functions. All work on a column of a table.</li><li><code>SUM(Sales[Amount])</code> — adds all values.</li><li><code>AVERAGE(Sales[Amount])</code> — arithmetic mean.</li><li><code>MIN(Sales[Amount])</code> / <code>MAX(Sales[Amount])</code> — smallest/largest value.</li><li><code>COUNT(Sales[OrderID])</code> — counts non-blank values in a column.</li><li><code>COUNTA(Sales[Product])</code> — counts non-blank values (works on text too).</li><li><code>COUNTROWS(Sales)</code> — counts rows in a table. Use this instead of COUNT on a column when you want row count.</li><li><code>DISTINCTCOUNT(Sales[ProductID])</code> — counts unique values.</li><li><span class='r'>Trap:</span> <code>COUNT</code> ignores blank/null rows. <code>COUNTROWS</code> counts every row including those with blanks. These give different results on tables with nulls.</li></ul>"
         },
         {
           "title": "4. CALCULATE — the most important DAX function",
           "t": "pbi.dax",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><code>CALCULATE</code> evaluates an expression in a modified filter context. It is the foundation of almost every advanced DAX calculation.</li><li><b>Syntax:</b> <code>CALCULATE(expression, filter1, filter2, ...)</code></li><li><b>Example — total sales for Laptops only, regardless of what the slicer shows:</b><pre><code>Laptop Sales = CALCULATE(SUM(Sales[Amount]), Sales[Product] = \"Laptop\")</code></pre></li><li><b>Example — sales in January:</b><pre><code>Jan Sales = CALCULATE(SUM(Sales[Amount]), Sales[Month] = \"January\")</code></pre></li><li><code>CALCULATE</code> takes the existing filter context and either adds to it, replaces part of it, or removes filters entirely with <code>ALL()</code>.</li><li><span class='y'>Why it matters:</span> Without CALCULATE, every measure is limited to the current filter context. With CALCULATE, you can override filters to compute things like % of total, comparisons, and conditional totals.</li><li><span class='r'>Trap:</span> CALCULATE with no filter arguments still changes the context — it activates row context transition. This is an advanced concept; for now just use it with explicit filter arguments.</li></ul>"
         }
       ]
     },
@@ -292,19 +307,24 @@
       "title": "Reports & Visualizations — building dashboards",
       "lessons": [
         {
-          "title": "1. Choosing the right chart",
+          "title": "1. The Report canvas and adding visuals",
           "t": "pbi.viz",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>The <b>Report canvas</b> is the blank page where you build your dashboard. It's the default view when you open Power BI Desktop.</li><li><b>To add a visual:</b> click a chart type in the Visualizations pane (right side). An empty visual appears on the canvas. Then drag fields from the Fields pane onto the visual's field wells (Axis, Values, Legend, etc.).</li><li><b>To resize/move:</b> drag the corners or the title bar of the visual.</li><li><b>Pages:</b> add multiple report pages (tabs at the bottom) for different views of the same data.</li><li><span class='y'>Habit:</span> Don't drag every field onto the canvas and see what happens. Decide first: what question am I answering? Then choose the right visual for that question.</li></ul>"
         },
         {
-          "title": "2. Slicers and filters",
+          "title": "2. Choosing the right chart type",
           "t": "pbi.viz",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Bar/Column chart</b> — compare values across categories. Bar = horizontal, Column = vertical. Best for most comparisons. Use when you have 2–10 categories.</li><li><b>Line chart</b> — show trends over time. Always use for time series (sales over months). Never use for unordered categories.</li><li><b>Pie/Donut chart</b> — show parts of a whole. Only useful with 2–4 slices. Avoid with many categories — human eyes can't compare slice sizes accurately. Use a bar chart instead.</li><li><b>Card</b> — display a single key number (Total Sales: 142,000). Use for KPIs at the top of a dashboard.</li><li><b>Table/Matrix</b> — show detailed data in rows and columns. Matrix supports row/column totals and drill-down like a pivot table.</li><li><b>Slicer</b> — an interactive filter the user can click. Add a Month slicer so users can filter all visuals to a specific month.</li><li><span class='r'>Trap:</span> Pie charts with more than 5 slices are unreadable. Replace with a bar chart sorted descending.</li></ul>"
         },
         {
-          "title": "3. Report design principles",
+          "title": "3. Slicers and filters",
           "t": "pbi.viz",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Slicer</b> — a visual on the canvas that filters other visuals when clicked. Add one by selecting the Slicer visual type, then drag a field (e.g. Month) onto it.</li><li><b>Visual-level filter</b> — in the Filters pane, applies only to one specific visual. Useful to show 'Top 5 products' in one chart without affecting others.</li><li><b>Page-level filter</b> — applies to all visuals on the current page.</li><li><b>Report-level filter</b> — applies to all pages in the report.</li><li><b>Cross-filtering:</b> by default, clicking a bar in one chart filters all other visuals on the page. This is automatic — Power BI does it based on the data model relationships.</li><li><span class='y'>Design rule:</span> Put slicers at the top or left of the page. Users expect filters to be in a consistent location.</li></ul>"
+        },
+        {
+          "title": "4. Formatting and design principles",
+          "t": "pbi.viz",
+          "html": "<ul><li><b>Format a visual:</b> select it → click the paint roller icon in the Visualizations pane → adjust colors, fonts, labels, borders, background.</li><li><b>Data labels:</b> turn them on to show values directly on bars/lines. Turn them off if the chart is too cluttered.</li><li><b>Titles:</b> every visual should have a clear, descriptive title that answers the question the visual is addressing. 'Sales' is bad. 'Monthly Sales by Product (2024)' is good.</li><li><b>Color:</b> use one consistent color for the same metric across all visuals. Use a highlight color only to draw attention to something important.</li><li><b>Less is more:</b> a dashboard with 4 clear visuals is better than one with 12 cluttered ones. Each visual should answer one specific question.</li><li><span class='r'>Misleading charts:</span> Never start a bar chart Y-axis at anything other than 0 — it exaggerates differences. Never use 3D charts — they distort proportions.</li></ul>"
         }
       ]
     }
@@ -537,6 +557,78 @@
       "code": null,
       "out": "1. Home → Use First Row as Headers\n2. Rename Column1 to 'Subject'",
       "why": "Transpose moves original column headers to row 1. Use First Row as Headers restores them."
+    },
+    {
+      "id": "pc19",
+      "t": "pbi.m",
+      "src": "ch6",
+      "ls": 1,
+      "lab": 6,
+      "ans": null,
+      "q": "What are the two keywords that every M query starts and ends with?",
+      "code": null,
+      "out": "let — starts the step definitions block\nin StepName — declares which step is the final output",
+      "why": "Every M query is a let...in expression. 'in' always references the last step you want to load."
+    },
+    {
+      "id": "pc20",
+      "t": "pbi.m",
+      "src": "ch6",
+      "ls": 3,
+      "lab": 6,
+      "ans": null,
+      "q": "What does 'each' mean in M, and give one example?",
+      "code": null,
+      "out": "'each' means 'for each row'. It runs the expression once per row.\nExample: Table.SelectRows(Source, each [Sales] > 10)\n→ keeps only rows where Sales exceeds 10.",
+      "why": "'each [Col]' accesses the value of Col in the current row. It's the standard way to write row-level logic in M."
+    },
+    {
+      "id": "pc21",
+      "t": "pbi.model",
+      "src": "ch7",
+      "ls": 0,
+      "lab": 7,
+      "ans": null,
+      "q": "What is a star schema? Name its two table types.",
+      "code": null,
+      "out": "Star schema: one central fact table surrounded by dimension tables.\nFact table: measurements/transactions (Sales amounts, quantities).\nDimension table: descriptive attributes (Products, Customers, Dates).",
+      "why": "Star schema is the standard Power BI model structure. It makes DAX calculations simpler and faster."
+    },
+    {
+      "id": "pc22",
+      "t": "pbi.dax",
+      "src": "ch8",
+      "ls": 1,
+      "lab": 8,
+      "ans": null,
+      "q": "When should you use a measure vs a calculated column?",
+      "code": null,
+      "out": "Measure: aggregations that change with report filters (Total Sales, % of total).\nCalculated column: row-level values fixed per row (Profit = Amount - Cost).\nDefault choice: measure — more flexible, less memory.",
+      "why": "Calculated columns are stored in the model and consume memory. Measures are computed on demand."
+    },
+    {
+      "id": "pc23",
+      "t": "pbi.dax",
+      "src": "ch8",
+      "ls": 3,
+      "lab": 8,
+      "ans": null,
+      "q": "What does CALCULATE do, and give a simple example?",
+      "code": null,
+      "out": "CALCULATE evaluates an expression in a modified filter context.\nExample: Laptop Sales = CALCULATE(SUM(Sales[Amount]), Sales[Product] = \"Laptop\")\n→ Always sums only Laptop sales, overriding any slicer.",
+      "why": "CALCULATE is the most important DAX function — it lets you control which data the calculation sees."
+    },
+    {
+      "id": "pc24",
+      "t": "pbi.viz",
+      "src": "ch9",
+      "ls": 1,
+      "lab": 9,
+      "ans": null,
+      "q": "Match each question to the right chart type:\n1. Sales trend over 12 months\n2. Sales by product this month\n3. Total revenue (one number)\n4. Each product's share of total sales",
+      "code": null,
+      "out": "1. Line chart — trends over time\n2. Bar/Column chart — compare categories\n3. Card — single KPI number\n4. Pie chart (only if ≤5 products, else bar chart)",
+      "why": "Chart type choice depends on what you're communicating: trend, comparison, single value, or proportion."
     }
   ],
   "mcq": [
@@ -877,6 +969,149 @@
         "When you want to aggregate by group"
       ],
       "why": "Transpose flips the whole table. Unpivot turns column headers into rows. Pivot turns row values into headers."
+    },
+    {
+      "id": "pq26",
+      "t": "pbi.m",
+      "q": "In M language, what does 'each [Sales] > 10' mean in this expression?",
+      "code": "Table.SelectRows(Source, each [Sales] > 10)",
+      "ok": "For each row, keep it if the Sales column value is greater than 10",
+      "bad": [
+        "Select the column named Sales and filter to values > 10",
+        "Sum all Sales values and check if the total exceeds 10",
+        "Add a new column with True/False values"
+      ],
+      "why": "'each' means 'for each row'. [Sales] accesses the Sales column value in that row. The whole expression is a row-level filter condition."
+    },
+    {
+      "id": "pq27",
+      "t": "pbi.m",
+      "q": "You rename a step from 'Clean' to 'CleanData' in the Advanced Editor. What else must you update?",
+      "code": null,
+      "ok": "Every later step that references 'Clean' by name must be updated to 'CleanData'",
+      "bad": [
+        "Nothing — Power BI auto-updates references",
+        "Only the 'in' line at the end",
+        "The column names inside the step"
+      ],
+      "why": "M steps reference each other by name. Renaming a step without updating references causes formula errors in all dependent steps."
+    },
+    {
+      "id": "pq28",
+      "t": "pbi.m",
+      "q": "Which M function adds a new column to a table based on a row-level calculation?",
+      "code": null,
+      "ok": "Table.AddColumn(Source, \"NewCol\", each [A] * 2)",
+      "bad": [
+        "Table.TransformColumns(Source, {{\"A\", each _ * 2}})",
+        "Table.SelectRows(Source, each [A] * 2)",
+        "Table.RenameColumns(Source, {{\"A\", \"NewCol\"}})"
+      ],
+      "why": "Table.AddColumn adds a new column. The third argument is a function (using 'each') that runs for every row. TransformColumns modifies an existing column. SelectRows filters rows."
+    },
+    {
+      "id": "pq29",
+      "t": "pbi.model",
+      "q": "A Products table has ProductID as a unique identifier. A Sales table has ProductID that repeats. What is the relationship type?",
+      "code": null,
+      "ok": "One-to-many: Products (1) → Sales (*)",
+      "bad": [
+        "Many-to-many: both tables have multiple rows",
+        "One-to-one: each product has exactly one sale",
+        "Many-to-one: Sales (*) → Products (1) is wrong notation"
+      ],
+      "why": "The '1' side has unique IDs (Products). The '*' side has repeating IDs (Sales — one product can have many sales). This is the most common relationship in Power BI models."
+    },
+    {
+      "id": "pq30",
+      "t": "pbi.model",
+      "q": "In a star schema, what is the fact table?",
+      "code": null,
+      "ok": "The central table containing measurements and transactions (sales amounts, quantities, dates)",
+      "bad": [
+        "The table with the most columns",
+        "The dimension table that describes products",
+        "The Date table used for time intelligence"
+      ],
+      "why": "Fact tables contain the numbers you measure (sales, costs, counts). Dimension tables describe the entities (products, customers, dates). The fact table is in the centre of the star."
+    },
+    {
+      "id": "pq31",
+      "t": "pbi.dax",
+      "q": "What is the difference between a measure and a calculated column?",
+      "code": null,
+      "ok": "A measure recalculates dynamically based on report filters; a calculated column has a fixed value per row stored in the model",
+      "bad": [
+        "They are identical — both compute values in DAX",
+        "A measure is faster; a calculated column is more accurate",
+        "Calculated columns work on text; measures only work on numbers"
+      ],
+      "why": "Measures are dynamic — Total Sales changes when you filter by month. Calculated columns are static — Profit = Amount - Cost is computed once per row and stored."
+    },
+    {
+      "id": "pq32",
+      "t": "pbi.dax",
+      "q": "You write SUM(Sales[Amount]). What does this return when a slicer filters to 'January'?",
+      "code": null,
+      "ok": "The sum of Amount for January sales only — the slicer filter is automatically applied",
+      "bad": [
+        "The grand total of all sales regardless of filters",
+        "An error — SUM ignores slicers",
+        "The count of January rows, not the sum"
+      ],
+      "why": "DAX measures are evaluated in the current filter context. The January slicer adds a filter to the context, so SUM only sums January rows automatically."
+    },
+    {
+      "id": "pq33",
+      "t": "pbi.dax",
+      "q": "What does CALCULATE(SUM(Sales[Amount]), Sales[Product] = \"Laptop\") return?",
+      "code": null,
+      "ok": "The total sales amount for Laptop only, regardless of what other filters are active",
+      "bad": [
+        "The total sales for all products",
+        "An error — CALCULATE cannot filter by text",
+        "The count of Laptop sales rows"
+      ],
+      "why": "CALCULATE overrides the filter context. Even if a slicer shows all products, this measure always filters to Laptop before summing."
+    },
+    {
+      "id": "pq34",
+      "t": "pbi.viz",
+      "q": "You want to show sales trends over 12 months. Which chart type is most appropriate?",
+      "code": null,
+      "ok": "Line chart — designed for showing trends over time",
+      "bad": [
+        "Pie chart — shows the proportion each month contributes",
+        "Bar chart — good for comparing categories but not ideal for time trends",
+        "Card — shows a single number, not a trend"
+      ],
+      "why": "Line charts are designed for time series. The continuous line makes trends and patterns visible. Bar charts work for category comparisons but don't show continuity over time."
+    },
+    {
+      "id": "pq35",
+      "t": "pbi.viz",
+      "q": "A slicer on your report page shows months. A user clicks 'March'. What happens to the other visuals?",
+      "code": null,
+      "ok": "All visuals on the page update to show only March data",
+      "bad": [
+        "Only the slicer itself updates — other visuals are unaffected",
+        "Only visuals that have a Date field update",
+        "The page reloads from the data source"
+      ],
+      "why": "Slicers apply a page-level filter context. All visuals on the page that use data from the same model tables will respond to the filter automatically."
+    },
+    {
+      "id": "pq36",
+      "t": "pbi.viz",
+      "q": "Your bar chart Y-axis starts at 950 instead of 0. What is the problem?",
+      "code": null,
+      "ok": "It visually exaggerates the differences between bars — small differences look huge",
+      "bad": [
+        "It is more accurate because it shows the relevant range",
+        "It is a Power BI default that cannot be changed",
+        "It only matters for pie charts, not bar charts"
+      ],
+      "why": "Bar chart length is the visual encoding of the value. If the axis doesn't start at 0, a bar that's 5% taller than another looks 10x taller. Always start bar/column chart axes at 0."
     }
   ],
   "boards": [
@@ -1241,6 +1476,82 @@
           ]
         }
       ]
+    },
+    {
+      "id": "pbi4",
+      "ch": "ch8",
+      "t": "pbi.dax",
+      "title": "DAX from zero — measures, SUM, and CALCULATE",
+      "steps": [
+        {
+          "say": "DAX is what makes Power BI smart. Without it your report shows raw data. With it you can answer questions like 'what percentage of total sales does each product represent?' Let's build from zero.",
+          "add": [
+            [
+              "h",
+              "Your first measure — Total Sales"
+            ],
+            [
+              "code",
+              "-- Click on the Sales table in the Fields pane\n-- Home ribbon → New Measure\n-- Type this formula:\n\nTotal Sales = SUM(Sales[Amount])\n\n-- Press Enter. The measure appears in the Sales table with a calculator icon.",
+              "{}"
+            ],
+            [
+              "w",
+              "{b:SUM(Sales[Amount])} — adds every value in the Amount column of the Sales table."
+            ],
+            [
+              "w",
+              "Drag Total Sales onto the canvas → it shows the grand total. Add a Product slicer → it automatically filters to the selected product."
+            ],
+            [
+              "sticky",
+              "Measures live in a table\nbut have no rows.\nThey recalculate every time\nthe filter context changes.",
+              "b"
+            ]
+          ]
+        },
+        {
+          "say": "Now the most important DAX function — CALCULATE. It lets you override what the slicer shows and compute values for a specific subset of data.",
+          "add": [
+            [
+              "h",
+              "CALCULATE — control the filter context"
+            ],
+            [
+              "code",
+              "-- Sales for Laptops only (ignores slicers):\nLaptop Sales = CALCULATE(SUM(Sales[Amount]), Sales[Product] = \"Laptop\")\n\n-- % of total:\n% of Total = DIVIDE(SUM(Sales[Amount]), CALCULATE(SUM(Sales[Amount]), ALL(Sales)))",
+              "{}"
+            ],
+            [
+              "w",
+              "{b:ALL(Sales)} removes all filters from the Sales table — so the denominator is always the grand total."
+            ],
+            [
+              "w",
+              "{b:DIVIDE(a, b)} is safer than a/b — it returns 0 instead of an error when b is 0."
+            ],
+            [
+              "sticky",
+              "CALCULATE = 'compute this\nexpression, but with\nthese filters instead.'",
+              "y"
+            ],
+            [
+              "try",
+              {
+                "q": "A slicer filters to March. What does CALCULATE(SUM(Sales[Amount]), ALL(Sales)) return?",
+                "code": null,
+                "ok": "The grand total of ALL sales — CALCULATE with ALL() removes the March filter",
+                "bad": [
+                  "Only March sales — the slicer still applies",
+                  "An error — ALL() cannot be used inside CALCULATE",
+                  "Zero — ALL() clears the data"
+                ],
+                "why": "ALL() removes all filters from the specified table. CALCULATE then evaluates SUM in that context — which is the full dataset, ignoring the slicer."
+              }
+            ]
+          ]
+        }
+      ]
     }
   ],
   "missions": [
@@ -1426,6 +1737,141 @@
             "ch5"
           ],
           "n": 4
+        }
+      ]
+    },
+    {
+      "title": "M Language",
+      "sub": "let/in, each, common table functions",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 5 M lessons",
+          "ch": "ch6",
+          "from": 0,
+          "to": 4
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 4 questions",
+          "pick": {
+            "ts": [
+              "pbi.m"
+            ]
+          },
+          "n": 4,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 2 cards",
+          "chs": [
+            "ch6"
+          ],
+          "n": 2
+        }
+      ]
+    },
+    {
+      "title": "Data Modeling",
+      "sub": "keys, relationships, star schema",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 4 modeling lessons",
+          "ch": "ch7",
+          "from": 0,
+          "to": 3
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 3 questions",
+          "pick": {
+            "ts": [
+              "pbi.model"
+            ]
+          },
+          "n": 3,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 1 card",
+          "chs": [
+            "ch7"
+          ],
+          "n": 1
+        }
+      ]
+    },
+    {
+      "title": "DAX — measures and CALCULATE",
+      "sub": "SUM, AVERAGE, COUNT, CALCULATE",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 4 DAX lessons",
+          "ch": "ch8",
+          "from": 0,
+          "to": 3
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: DAX board",
+          "ids": [
+            "pbi4"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 4 questions",
+          "pick": {
+            "ts": [
+              "pbi.dax"
+            ]
+          },
+          "n": 4,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 2 cards",
+          "chs": [
+            "ch8"
+          ],
+          "n": 2
+        }
+      ]
+    },
+    {
+      "title": "Reports & Visualizations",
+      "sub": "chart types, slicers, filters, design",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 4 report lessons",
+          "ch": "ch9",
+          "from": 0,
+          "to": 3
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 4 questions",
+          "pick": {
+            "ts": [
+              "pbi.viz"
+            ]
+          },
+          "n": 4,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 1 card",
+          "chs": [
+            "ch9"
+          ],
+          "n": 1
         }
       ]
     }
