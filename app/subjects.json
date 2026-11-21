@@ -1,0 +1,22 @@
+[
+  {
+    "id": "pcap",
+    "name": "PCAP — Python",
+    "icon": "🐍",
+    "type": "python",
+    "examDate": "2026-12-03",
+    "examFormat": "40 MCQ · 65 minutes · 70% pass",
+    "color": "blue",
+    "description": "Certified Associate in Python Programming exam prep"
+  },
+  {
+    "id": "django",
+    "name": "Django",
+    "icon": "🦄",
+    "type": "django",
+    "examDate": "",
+    "examFormat": "MCQ + written answers + practical",
+    "color": "green",
+    "description": "Django web framework — models, views, templates, forms, ORM"
+  }
+]

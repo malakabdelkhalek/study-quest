@@ -1,0 +1,17 @@
+{
+  "meta": {
+    "id": "django",
+    "name": "Django",
+    "icon": "🦄",
+    "type": "django",
+    "examDate": "",
+    "examFormat": "MCQ + written answers + practical",
+    "color": "green",
+    "description": "Django web framework — models, views, templates, forms, ORM"
+  },
+  "chapters": [],
+  "cards": [],
+  "mcq": [],
+  "topics": {},
+  "boards": []
+}

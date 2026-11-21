@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>:root{color-scheme:light}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
 </head><body>
-<title>PCAP Quest</title>
+<title>Study Quest</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Patrick+Hand&family=JetBrains+Mono:wght@400;700&display=swap">
@@ -311,15 +311,16 @@ body.immersive main{padding-bottom:190px}
 
 <div class="app">
   <nav class="nav" id="nav" aria-label="Main">
-    <div class="brand logo">PCAP <span>Quest</span></div>
+    <div class="brand logo">Study <span>Quest</span></div>
   </nav>
   <div style="min-width:0">
     <header class="top">
-      <div class="logo">PCAP <span>Quest</span></div>
+      <div class="logo">Study <span>Quest</span></div>
       <div class="xpbar" title="Experience"><span class="lvl" id="lvl">Lv 1</span><div class="bar"><i id="xpfill" style="width:0"></i></div></div>
       <div class="chips">
         <span class="chip" title="Daily streak"><span class="flame" id="flame">🔥</span><b id="streak">0</b></span>
-        <span class="chip" title="Days until exam">📅 <b id="dleft">14</b> days</span>
+        <span class="chip" title="Days until exam">📅 <b id="dleft">–</b> days</span>
+        <button class="chip" id="subjbtn" title="Switch subject" style="gap:5px">📚 <b id="subjname">…</b></button>
         <button class="chip thbtn" id="thbtn" aria-haspopup="true" aria-label="Change theme">☀️</button>
       </div>
     </header>
@@ -360,16 +361,28 @@ function fmtOut(o) {
 }
 
 /* ================= state ================= */
-const LS = "pcapquest.v1";
+const LS = "studyquest.v1";
+const LSS = "studyquest.subject"; // last active subject id
 const TODAY = () => dayStr();
 function fresh() {
-  return { v: 1, upd: 0, resetAt: 0, xp: 0, startDate: "2026-11-19", examDate: "2026-12-03", goalMin: 15, sound: true, bonus: true,
+  return { v: 1, upd: 0, resetAt: 0, xp: 0, startDate: TODAY(), examDate: "", goalMin: 15, sound: true, bonus: true,
     days: {}, qs: {}, topics: {}, lessons: {}, boards: {}, voice: true, tasks: {}, mocks: [], badges: {}, bestStreak: 0, totalOk: 0, totalN: 0 };
+}
+// per-subject state lives under S.sub[subjectId]
+function freshSub() {
+  return { xp: 0, startDate: TODAY(), examDate: "", days: {}, qs: {}, topics: {}, lessons: {}, boards: {}, tasks: {}, mocks: [], totalOk: 0, totalN: 0 };
 }
 let S = fresh();
 try { const raw = localStorage.getItem(LS); if (raw) S = Object.assign(fresh(), JSON.parse(raw)); } catch (e) {}
-let C = null; // content
-const T = () => (S.days[TODAY()] ||= { sec: 0, q: 0, ok: 0, quiz: 0, pass: 0 });
+S.sub = S.sub || {};
+let C = null; // content for current subject
+let SUBJ = null; // current subject meta object
+let SUBJECTS = []; // all subjects from subjects.json
+let activeSubjectId = null;
+const T = () => {
+  const bucket = activeSubjectId ? (S.sub[activeSubjectId] ||= freshSub()) : S;
+  return (bucket.days[TODAY()] ||= { sec: 0, q: 0, ok: 0, quiz: 0, pass: 0 });
+};
 
 /* --- sync with db (per-person private doc) --- */
 let db = null, docRef = null, syncState = "local", writing = false, dirty = false, lastWrite = 0, saveTimer = null;
@@ -426,8 +439,8 @@ async function flush() {
 })();
 
 /* ================= gamification ================= */
-const LEVELS = ["Hello World", "Variable Voyager", "Loop Rider", "String Slinger", "Exception Handler", "Class Act", "Generator Wizard", "Closure Keeper", "MRO Master", "PCAP Ready", "PCAP Ace"];
-function need(n) { return 60 * n * (n + 1); } // xp needed to reach level n (0-based)
+const LEVELS = ["Hello World", "Variable Voyager", "Loop Rider", "String Slinger", "Exception Handler", "Class Act", "Generator Wizard", "Closure Keeper", "MRO Master", "Quest Legend", "Study Ace"];
+function need(n) { return 60 * n * (n + 1); }
 function levelInfo() { let n = 0; while (S.xp >= need(n + 1)) n++; const a = need(n), b = need(n + 1); return { n, title: LEVELS[Math.min(n, LEVELS.length - 1)], pct: (S.xp - a) / (b - a) * 100, toNext: b - S.xp }; }
 function addXP(n, ev) {
   const before = levelInfo().n; S.xp += n;
@@ -436,6 +449,7 @@ function addXP(n, ev) {
   if (after > before) { sfx("level"); boom(); modal(`<div class="lvlup">Level ${after + 1}!</div><p style="font-size:22px">You are now a <b>${esc(levelInfo().title)}</b>.</p>`); }
   refreshChrome();
 }
+// goalMet / streak use global S.days (shared across subjects)
 function goalMet(d) { return d && ((d.sec || 0) >= S.goalMin * 60 || (d.pass || 0) >= 1); }
 function streak() {
   let n = 0, d = TODAY();
@@ -443,6 +457,11 @@ function streak() {
   while (goalMet(S.days[d])) { n++; d = addDays(d, -1); }
   return n;
 }
+// sub() returns the per-subject bucket (or global S if no subject loaded)
+function bucket() { return activeSubjectId ? (S.sub[activeSubjectId] ||= freshSub()) : S; }
+// examDate / startDate come from the subject bucket
+function examDate() { return bucket().examDate || SUBJ?.examDate || ""; }
+function startDate() { return bucket().startDate || TODAY(); }
 function checkGoal() {
   const t = T();
   if (goalMet(t) && !t.goalAwarded) { t.goalAwarded = 1; addXP(50); sfx("level"); boom(); toast("🎯 Daily goal done! +50 XP · streak " + streak()); }
@@ -473,7 +492,7 @@ function checkBadges() {
   if (st >= 3) award("s3"); if (st >= 7) award("s7"); if (st >= 14) award("s14");
   if (S.totalOk >= 100) award("century"); if (S.totalOk >= 500) award("fivehundred");
   const oop = chapterMastery("oop"); if (oop.n >= 25 && oop.m >= .8) award("oop");
-  if (C && C.chapters.slice(0, 5).every(ch => ch.lessons.every((l, i) => S.lessons[ch.id + ":" + i]))) award("lessons");
+  if (C && C.chapters.slice(0, 5).every(ch => ch.lessons.every((l, i) => bucket().lessons[ch.id + ":" + i]))) award("lessons");
 }
 
 /* sounds (WebAudio, after a tap) */
@@ -507,40 +526,62 @@ function modal(html, buttons) { // celebrations queue up one at a time; dialogs 
 /* ================= mastery & SRS ================= */
 function record(item, ok) {
   const id = item.id, t = item.t, d = T();
-  const q = S.qs[id] ||= { n: 0, ok: 0, box: 0, due: "" };
+  const bucket = bucket();
+  const q = bucket.qs[id] ||= { n: 0, ok: 0, box: 0, due: "" };
   q.n++; if (ok) { q.ok++; q.box = Math.min(5, q.box + 1); } else q.box = 0;
   q.due = addDays(TODAY(), [0, 1, 2, 4, 7, 14][q.box]); q.last = ok ? 1 : 0;
-  const tp = S.topics[t] ||= { n: 0, h: [] };
+  const tp = bucket.topics[t] ||= { n: 0, h: [] };
   const before = mastery(t);
   tp.n++; tp.h.push(ok ? 1 : 0); if (tp.h.length > 12) tp.h.shift();
   const after = mastery(t);
   if (before.n >= 5 && before.m < .5 && after.m >= .8) award("comeback");
   d.q++; if (ok) d.ok++; S.totalN++; if (ok) S.totalOk++;
+  bucket.totalN = (bucket.totalN || 0) + 1; if (ok) bucket.totalOk = (bucket.totalOk || 0) + 1;
+  // also update global days for streak
+  const gd = S.days[TODAY()] ||= { sec: 0, q: 0, ok: 0, quiz: 0, pass: 0 };
+  gd.q++; if (ok) gd.ok++;
   const h = new Date().getHours(); if (h >= 22 || h < 4) { d.night = 1; award("night"); }
 }
-function mastery(t) { // recency-weighted accuracy of last answers on a topic
-  const tp = S.topics[t]; if (!tp || !tp.h.length) return { m: null, n: 0 };
+function mastery(t) {
+  const tp = bucket().topics[t]; if (!tp || !tp.h.length) return { m: null, n: 0 };
   let w = 0, s = 0; tp.h.forEach((v, i) => { const wi = 1 + i * 0.25; w += wi; s += v * wi; });
   return { m: s / w, n: tp.n };
 }
 function chapterMastery(ch) {
   const ts = Object.keys(C?.topics || {}).filter(t => t.startsWith(ch + "."));
-  const extra = S.topics[ch]; let w = 0, s = 0, n = 0;
+  const extra = bucket().topics[ch]; let w = 0, s = 0, n = 0;
   for (const t of ts) { const m = mastery(t); if (m.m != null) { const wi = Math.min(m.n, 12); w += wi; s += m.m * wi; n += m.n; } }
   if (extra && extra.h.length) { const m = mastery(ch); const wi = Math.min(m.n, 6); w += wi; s += m.m * wi; n += m.n; }
   return { m: w ? s / w : null, n };
 }
-const WEIGHTS = { mod: .12, exc: .14, str: .18, oop: .34, misc: .22 };
+function subjectProgress(sid) {
+  // overall % complete: lessons read + qs answered for a subject
+  const b = S.sub[sid]; if (!b) return 0;
+  const totalOk = b.totalOk || 0; return Math.min(100, Math.round(totalOk / 20));
+}
+function subjectMastery(sid) {
+  const b = S.sub[sid]; if (!b || !Object.keys(b.topics || {}).length) return null;
+  const vals = Object.values(b.topics).filter(tp => tp.h && tp.h.length);
+  if (!vals.length) return null;
+  let w = 0, s = 0;
+  vals.forEach(tp => { const wi = Math.min(tp.n, 12); w += wi; const ww = tp.h.reduce((a, v, i) => a + v * (1 + i * 0.25), 0), ws = tp.h.reduce((a, _, i) => a + (1 + i * 0.25), 0); s += ws ? (ww / ws) * wi : 0; });
+  return w ? Math.round(s / w * 100) : null;
+}
 function readiness() {
+  // weights come from the content file if present, else uniform
+  const weights = C?.examWeights || {};
+  const chs = C ? C.chapters.map(c => c.id) : [];
+  if (!chs.length) return { score: 0, coverage: 0 };
+  const total = chs.reduce((a, ch) => a + (weights[ch] || 1), 0);
   let s = 0, cov = 0;
-  for (const [ch, w] of Object.entries(WEIGHTS)) { const m = chapterMastery(ch); s += w * (m.m ?? 0); cov += w * Math.min(1, m.n / 15); }
+  for (const ch of chs) { const w = (weights[ch] || 1) / total; const m = chapterMastery(ch); s += w * (m.m ?? 0); cov += w * Math.min(1, m.n / 15); }
   return { score: s, coverage: cov };
 }
 const level = m => m == null ? 0 : m < .5 ? 1 : m < .7 ? 2 : m < .85 ? 3 : 4;
 
-/* ================= the 14-day plan ================= */
-const RANGE = (ch, ...ts) => ({ ch, ts });
-const MISSIONS = [
+/* ================= the plan (driven by content file) ================= */
+// MISSIONS is now read from C.missions if present (subject-specific), else falls back to PCAP default
+const PCAP_MISSIONS = [
   { title: "Diagnostic check", sub: "Find out where you stand", tasks: [{ k: "quiz", label: "Mixed check: 20 questions (any score)", pick: { chs: ["mod", "str", "exc", "oop", "misc"] }, n: 20, pass: 0 }] },
   { title: "OOP I: classes & variables", sub: "self, __init__, private names, class vs instance", tasks: [{ k: "boards", label: "Teacher mode: OOP boards 1–4", ids: ["oop1", "oop2", "oop3", "oop4"] }, { k: "quiz", label: "Quiz: 12 on OOP basics", pick: { ts: ["oop.basics", "oop.private", "oop.classvar"] }, n: 12, pass: .6 }] },
   { title: "OOP II: inheritance & MRO", sub: "hasattr, __bases__, super(), multiple inheritance", tasks: [{ k: "boards", label: "Teacher mode: OOP boards 5–8", ids: ["oop5", "oop6", "oop7", "oop8"] }, { k: "quiz", label: "Quiz: 12 on inheritance & MRO", pick: { ts: ["oop.intro", "oop.inherit", "oop.mro", "oop.poly"] }, n: 12, pass: .6 }] },
@@ -556,17 +597,20 @@ const MISSIONS = [
   { title: "Mock exam #2", sub: "aim for 75%+", tasks: [{ k: "mock", label: "Take a full mock exam" }] },
   { title: "Final review", sub: "the day before: mistakes + last mock", tasks: [{ k: "review", label: "Redo every question you missed", n: 25 }, { k: "mock", label: "Final mock exam" }] },
 ];
-function schedule() { // spread missions over days from start to the day before the exam
-  const total = Math.max(1, diffDays(S.startDate, S.examDate));
-  return MISSIONS.map((m, i) => addDays(S.startDate, Math.min(total - 1, Math.floor(i * total / MISSIONS.length))));
+function MISSIONS() { return C?.missions || PCAP_MISSIONS; }
+function schedule() {
+  const ed = examDate(), sd = startDate();
+  if (!ed) return MISSIONS().map((_, i) => addDays(sd, i));
+  const total = Math.max(1, diffDays(sd, ed));
+  return MISSIONS().map((m, i) => addDays(sd, Math.min(total - 1, Math.floor(i * total / MISSIONS().length))));
 }
-const taskDone = (mi, ti) => !!S.tasks[mi + ":" + ti];
-const missionDone = mi => MISSIONS[mi].tasks.every((_, ti) => taskDone(mi, ti));
-function currentMission() { const i = MISSIONS.findIndex((_, mi) => !missionDone(mi)); return i < 0 ? MISSIONS.length : i; }
+const taskDone = (mi, ti) => !!(bucket().tasks || {})[mi + ":" + ti];
+const missionDone = mi => MISSIONS()[mi].tasks.every((_, ti) => taskDone(mi, ti));
+function currentMission() { const i = MISSIONS().findIndex((_, mi) => !missionDone(mi)); return i < 0 ? MISSIONS().length : i; }
 function readTask(t) {
-  if (t.k === "boards") return { n: t.ids.filter(id => S.boards[id]).length, tot: t.ids.length }; const ch = C.chapters.find(c => c.id === t.ch); let n = 0, tot = 0; for (let i = t.from; i <= Math.min(t.to, ch.lessons.length - 1); i++) { tot++; if (S.lessons[t.ch + ":" + i]) n++; } return { n, tot }; }
+  const b2 = bucket(); if (t.k === "boards") return { n: t.ids.filter(id => b2.boards[id]).length, tot: t.ids.length }; const ch = C.chapters.find(c => c.id === t.ch); let n = 0, tot = 0; for (let i = t.from; i <= Math.min(t.to, ch.lessons.length - 1); i++) { tot++; if (b2.lessons[t.ch + ":" + i]) n++; } return { n, tot }; }
 function syncReadTasks() {
-  MISSIONS.forEach((m, mi) => m.tasks.forEach((t, ti) => { if ((t.k === "read" || t.k === "boards") && !taskDone(mi, ti)) { const r = readTask(t); if (r.n >= r.tot) S.tasks[mi + ":" + ti] = TODAY(); } }));
+  MISSIONS().forEach((m, mi) => m.tasks.forEach((t, ti) => { if ((t.k === "read" || t.k === "boards") && !taskDone(mi, ti)) { const r = readTask(t); if (r.n >= r.tot) { bucket().tasks[mi + ":" + ti] = TODAY(); } } }));
 }
 
 /* ================= question picking ================= */
@@ -574,27 +618,33 @@ function pool(pick) {
   const chs = pick.chs, ts = pick.ts;
   return C.mcq.filter(q => (!ts || ts.includes(q.t)) && (!chs || chs.includes(q.t.split(".")[0])) && (S.bonus || !q.t.startsWith("bonus")));
 }
-function choose(items, n) { // due mistakes first, then unseen, then weakest, with randomness
-  const td = TODAY();
-  const score = q => { const s = S.qs[q.id]; if (!s) return 2 + Math.random(); if (s.last === 0 && s.due <= td) return 4 + Math.random(); if (s.due <= td) return 1.5 + Math.random(); return (1 - s.ok / s.n) + Math.random() * .8; };
+function choose(items, n) {
+  const td = TODAY(), b = bucket();
+  const score = q => { const s = b.qs[q.id]; if (!s) return 2 + Math.random(); if (s.last === 0 && s.due <= td) return 4 + Math.random(); if (s.due <= td) return 1.5 + Math.random(); return (1 - s.ok / s.n) + Math.random() * .8; };
   return items.map(q => [score(q), q]).sort((a, b) => b[0] - a[0]).slice(0, n).map(x => x[1]);
 }
 function weakestTopics(k = 4) {
   return Object.keys(C.topics).filter(t => S.bonus || !t.startsWith("bonus")).map(t => ({ t, ...mastery(t) })).filter(x => x.m != null).sort((a, b) => a.m - b.m).slice(0, k);
 }
-function mixedSet(n, chs) { // spread evenly over chapters
-  const per = {}; const list = chs || ["mod", "str", "exc", "oop", "misc"];
+function mixedSet(n, chs) {
+  const list = chs || C.chapters.map(c => c.id);
   const out = []; let i = 0;
   const pools = Object.fromEntries(list.map(c => [c, choose(pool({ chs: [c] }), 40)]));
   while (out.length < n && i < 200) { const c = list[i % list.length]; const q = pools[c].shift(); if (q) out.push(q); i++; }
   return shuffle(out);
 }
 function mockSet() {
-  const want = { mod: 6, exc: 5, str: 8, oop: 12, misc: 9 }; const out = [];
-  for (const [c, n] of Object.entries(want)) out.push(...shuffle(pool({ chs: [c] })).slice(0, n));
-  return out; // grouped like the real exam sections
+  // use content file's examWeights if present, else uniform
+  const weights = C.examWeights || {};
+  const chs = C.chapters.map(c => c.id);
+  const total = chs.reduce((a, ch) => a + (weights[ch] || 1), 0);
+  const want = {}; const n = C.mockCount || 40;
+  chs.forEach(ch => { want[ch] = Math.round((weights[ch] || 1) / total * n); });
+  const out = [];
+  for (const [c, cnt] of Object.entries(want)) out.push(...shuffle(pool({ chs: [c] })).slice(0, cnt));
+  return out;
 }
-function mistakesDue() { const td = TODAY(); return C.mcq.filter(q => { const s = S.qs[q.id]; return s && s.last === 0; }); }
+function mistakesDue() { const b = bucket(); return C.mcq.filter(q => { const s = b.qs[q.id]; return s && s.last === 0; }); }
 
 /* ================= routing & chrome ================= */
 const ICONS = {
@@ -614,14 +664,16 @@ function confirmLeave() { return true; }
 function refreshChrome() {
   const L = levelInfo(); $("#lvl").textContent = "Lv " + (L.n + 1); $("#xpfill").style.width = L.pct + "%"; $("#lvl").title = L.title + " · " + L.toNext + " XP to next level";
   const st = streak(); $("#streak").textContent = st; $("#flame").classList.toggle("off", !goalMet(S.days[TODAY()]));
-  $("#dleft").textContent = Math.max(0, diffDays(TODAY(), S.examDate));
+  const ed = examDate(); $("#dleft").textContent = ed ? Math.max(0, diffDays(TODAY(), ed)) : "–";
+  const sn = $("#subjname"); if (sn) sn.textContent = SUBJ ? SUBJ.icon + " " + SUBJ.name : "Pick subject";
   document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.tab === route));
 }
 function render() {
   refreshChrome();
   document.body.classList.remove("immersive");
   const m = $("#main");
-  if (!C) { m.innerHTML = `<div class="sticky tape" style="max-width:420px;margin:40px auto;text-align:center"><h2>Loading your board…</h2><p class="muted">Getting the lessons and questions ready.</p></div>`; return; }
+  if (!activeSubjectId) return vWelcome(m);
+  if (!C) { m.innerHTML = `<div class="sticky tape" style="max-width:420px;margin:40px auto;text-align:center"><h2>Loading ${esc(SUBJ?.name || "subject")}…</h2><p class="muted">Getting the lessons and questions ready.</p></div>`; return; }
   if (quiz) return renderQuiz();
   ({ today: vToday, learn: vLearn, practice: vPractice, weak: vWeak, lab: vLab, me: vMe }[route] || vToday)(m);
 }
@@ -631,9 +683,95 @@ function ringSVG(p, label, sub2) {
   const r = 54, c = 2 * Math.PI * r;
   return `<svg class="ring" viewBox="0 0 132 132" role="img" aria-label="${esc(label)}"><circle class="bg" cx="66" cy="66" r="${r}"/><circle class="fg" cx="66" cy="66" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - Math.min(1, p))}" transform="rotate(-90 66 66)"/><text x="66" y="66" font-size="26">${esc(label)}</text><text x="66" y="90" font-size="13">${esc(sub2)}</text></svg>`;
 }
+/* ================= Welcome screen ================= */
+function loadSubject(id) {
+  activeSubjectId = id;
+  SUBJ = SUBJECTS.find(s => s.id === id) || null;
+  C = null;
+  try { localStorage.setItem(LSS, id); } catch(e) {}
+  if (!(S.sub[id])) S.sub[id] = freshSub();
+  // copy examDate from subject registry into bucket if not already set
+  if (SUBJ?.examDate && !S.sub[id].examDate) S.sub[id].examDate = SUBJ.examDate;
+  if (!S.sub[id].startDate) S.sub[id].startDate = TODAY();
+  route = "today"; render();
+  fetch("content/" + id + ".json").then(r => r.json()).then(data => {
+    // content file may have meta block
+    if (data.meta) { SUBJ = { ...SUBJ, ...data.meta }; }
+    C = data;
+    syncReadTasks(); save(); render();
+  }).catch(() => {
+    $("#main").innerHTML = `<div class="sticky p" style="max-width:460px;margin:40px auto"><h2>Couldn't load ${esc(SUBJ?.name||id)}</h2><p>Check your connection and reload.</p></div>`;
+  });
+}
+
+function vWelcome(m) {
+  const st = streak(), gmet = goalMet(S.days[TODAY()]);
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Hey" : "Good evening";
+  let html = `<div style="max-width:700px;margin:0 auto">
+    <h1 class="board-h" style="font-size:32px">${greeting}, Malak! 👋</h1>
+    <div class="flex" style="margin:4px 0 20px;gap:16px;flex-wrap:wrap">
+      <span class="chip"><span class="flame ${gmet?"":"off"}">🔥</span> <b>${st}</b> day streak</span>
+      <span class="chip">⭐ <b>${S.xp}</b> XP total · Lv ${levelInfo().n+1}</span>
+    </div>
+    <h2 class="sec" style="margin-top:0">Which subject are we studying today?</h2>
+    <div class="chgrid" style="margin-bottom:20px">`;
+
+  SUBJECTS.forEach((sj, i) => {
+    const b = S.sub[sj.id];
+    const pct = subjectProgress(sj.id);
+    const mast = subjectMastery(sj.id);
+    const ed = b?.examDate || sj.examDate || "";
+    const daysLeft = ed ? Math.max(0, diffDays(TODAY(), ed)) : null;
+    const colClass = ["b","g","p",""][i % 4];
+    html += `<button class="sticky ${colClass} chcard ${i%2?"tilt":"tilt2"}" data-subj="${sj.id}" style="cursor:pointer">
+      <div style="font-size:28px">${sj.icon}</div>
+      <h3 style="margin:4px 0">${esc(sj.name)}</h3>
+      <p class="small muted" style="margin:2px 0">${esc(sj.description)}</p>
+      <div class="flex" style="margin-top:8px;gap:8px;font-size:14px">
+        ${mast!=null?`<span>Mastery <b>${mast}%</b></span>`:`<span class="muted">Not started</span>`}
+        ${daysLeft!=null?`<span>📅 <b>${daysLeft}</b> days left</span>`:`<span class="muted">No exam date set</span>`}
+      </div>
+      <div class="meter" style="height:8px;margin-top:6px"><i style="width:${pct}%"></i></div>
+      <div class="pct" style="font-size:13px;color:var(--muted)">${pct}% done</div>
+    </button>`;
+  });
+
+  html += `</div>
+    <button class="btn ghost big" id="addsubj">+ Add subject</button>
+  </div>`;
+  m.innerHTML = html;
+
+  m.querySelectorAll("[data-subj]").forEach(b => b.onclick = () => loadSubject(b.dataset.subj));
+
+  $("#addsubj").onclick = () => {
+    const mm = modal(`<h2>Add a subject</h2>
+      <div class="field"><label>Name</label><input id="ns-name" placeholder="e.g. Algorithms" style="width:100%"></div>
+      <div class="field"><label>Exam date (optional)</label><input type="date" id="ns-date"></div>
+      <div class="field"><label>Subject type</label><select id="ns-type">
+        <option value="theory">Theory (written answers)</option>
+        <option value="python">Python (runnable code)</option>
+        <option value="django">Django (web framework)</option>
+        <option value="sql">SQL (database queries)</option>
+      </select></div>`,
+      `<button class="btn" data-close>Cancel</button><button class="btn go" id="ns-ok">Add</button>`);
+    mm.querySelector("#ns-ok").onclick = () => {
+      const name = mm.querySelector("#ns-name").value.trim();
+      if (!name) return;
+      const id = name.toLowerCase().replace(/[^a-z0-9]+/g,"-").slice(0,20);
+      const type = mm.querySelector("#ns-type").value;
+      const ed = mm.querySelector("#ns-date").value;
+      const newS = { id, name, icon: "📖", type, examDate: ed, examFormat: "", description: name, color: "blue" };
+      SUBJECTS.push(newS);
+      mm.remove();
+      loadSubject(id);
+    };
+  };
+}
+
 function vToday(m) {
   const t = S.days[TODAY()] || { sec: 0, pass: 0 }, mins = Math.floor((t.sec || 0) / 60), met = goalMet(t);
-  const sched = schedule(), cur = currentMission(), dleft = diffDays(TODAY(), S.examDate);
+  const sched = schedule(), cur = currentMission(), ed = examDate(), dleft = ed ? diffDays(TODAY(), ed) : null;
   const todayIdx = sched.filter(d => d <= TODAY()).length - 1;
   const pace = cur > todayIdx ? ["mk-green", "Ahead of plan 🚀"] : cur === todayIdx ? ["mk-blue", "On track"] : ["mk-red", `${todayIdx - cur} mission${todayIdx - cur > 1 ? "s" : ""} behind: catch up today`];
   const R = readiness(), due = mistakesDue().length;
@@ -645,35 +783,36 @@ function vToday(m) {
     <div class="sticky w tape ringbox">${ringSVG(met ? 1 : (t.sec || 0) / (S.goalMin * 60), met ? "Done!" : mins + "/" + S.goalMin, met ? "goal met" : "minutes")}
       <div><h2 style="font-size:22px">Today's goal</h2><p class="small">${S.goalMin} minutes of study <b>or</b> pass one quiz (60%+).</p>
       <p class="small">${met ? "<span class='mk-green'>✓ Done. Streak safe!</span>" : "Keep going: the ring fills as you study."}</p></div></div>
-    ${cur < MISSIONS.length ? missionCard(cur, sched[cur]) : `<div class="sticky g tilt2 mission"><h3>All 14 missions done! 🎉</h3><p>Keep the streak with Quick 10s and mock exams until the exam.</p><button class="btn go big" data-act="mock">Take a mock exam</button></div>`}
+    ${cur < MISSIONS().length ? missionCard(cur, sched[cur]) : `<div class="sticky g tilt2 mission"><h3>All missions done! 🎉</h3><p>Keep the streak with Quick 10s and mock exams until the exam.</p><button class="btn go big" data-act="mock">Take a mock exam</button></div>`}
   </div>`;
   html += `<div class="sec">Exam readiness</div>
    <div class="sticky w"><div class="flex" style="justify-content:space-between"><b class="mk-blue" style="font-family:var(--f-marker);font-size:30px">${Math.round(R.score * 100)}%</b><span class="small muted">pass line 70% · coverage ${Math.round(R.coverage * 100)}%</span></div>
    <div class="meter" title="Estimated exam score"><i style="width:${R.score * 100}%"></i><span class="pass"></span></div>
-   <p class="small muted" style="margin-top:6px">Estimated from your recent answers, weighted like the real exam (OOP 34%, Misc 22%, Strings 18%, Exceptions 14%, Modules 12%).</p></div>`;
+   <p class="small muted" style="margin-top:6px">Estimated from your recent answers, weighted by topic.</p></div>`;
   html += `<div class="sec">Quick moves</div><div class="flex">
     <button class="btn blue" data-act="quick">⚡ Quick 10</button>
     <button class="btn" data-act="weak">🎯 Weak-spot drill</button>
     <button class="btn" data-act="review" ${due ? "" : "disabled"}>🔁 Redo mistakes (${due})</button>
     <button class="btn" data-act="mock">🎓 Mock exam</button></div>`;
-  html += `<div class="sec">Your 2-week plan · <span class="${pace[0]}">${pace[1]}</span></div><div class="timeline">` +
-    sched.map((d, i) => `<div class="day ${missionDone(i) ? "done" : ""} ${i === cur ? "now" : ""}"><b>${fmtDay(d)}</b>${esc(MISSIONS[i].title)}</div>`).join("") +
-    `<div class="day exam"><b>${fmtDay(S.examDate)}</b>🎓 EXAM</div></div>`;
+  html += `<div class="sec">Your plan · <span class="${pace[0]}">${pace[1]}</span></div><div class="timeline">` +
+    sched.map((d, i) => `<div class="day ${missionDone(i) ? "done" : ""} ${i === cur ? "now" : ""}"><b>${fmtDay(d)}</b>${esc(MISSIONS()[i].title)}</div>`).join("") +
+    (ed ? `<div class="day exam"><b>${fmtDay(ed)}</b>🎓 EXAM</div>` : "") + `</div>`;
   const wk = [...Array(7)].map((_, i) => addDays(TODAY(), i - 6));
   html += `<div class="sec">Last 7 days</div><div class="week">` + wk.map(d => { const x = S.days[d]; const wd = parseDay(d).toLocaleDateString("en-GB", { weekday: "short" }); return `<div class="wd ${goalMet(x) ? "met" : ""} ${d === TODAY() ? "today" : ""}" title="${fmtDay(d)}: ${x ? Math.floor((x.sec || 0) / 60) + " min, " + (x.ok || 0) + "/" + (x.q || 0) + " right" : "no study"}"><span>${wd}</span><b>${goalMet(x) ? "✓" : x ? Math.floor((x.sec || 0) / 60) + "m" : "·"}</b><span>${x && x.q ? (x.ok || 0) + "/" + x.q : "&nbsp;"}</span></div>`; }).join("") + `</div>`;
   m.innerHTML = html; bindActs(m);
 }
 function missionCard(mi, date) {
-  const M = MISSIONS[mi];
-  return `<div class="sticky tilt2 mission"><div class="small muted">Mission ${mi + 1} of ${MISSIONS.length} · planned ${fmtDay(date)}</div><h3>${esc(M.title)}</h3><div class="small">${esc(M.sub)}</div>
+  const M = MISSIONS()[mi];
+  return `<div class="sticky tilt2 mission"><div class="small muted">Mission ${mi + 1} of ${MISSIONS().length} · planned ${fmtDay(date)}</div><h3>${esc(M.title)}</h3><div class="small">${esc(M.sub)}</div>
    <ul class="tasks">${M.tasks.map((t, ti) => { const d = taskDone(mi, ti); let extra = ""; if ((t.k === "read" || t.k === "boards") && !d) { const r = readTask(t); extra = ` <span class="muted small">(${r.n}/${r.tot})</span>`; } return `<li class="${d ? "done" : ""}"><span class="box">${d ? "✓" : ""}</span><span class="t">${esc(t.label)}${extra}</span></li>`; }).join("")}</ul>
    <button class="btn go big" data-mission="${mi}">${M.tasks.some((_, ti) => taskDone(mi, ti)) ? "Continue ▸" : "Start ▸"}</button></div>`;
 }
 function startMission(mi) {
-  const M = MISSIONS[mi]; const ti = M.tasks.findIndex((_, i) => !taskDone(mi, i)); if (ti < 0) return; const t = M.tasks[ti];
+  const M = MISSIONS()[mi]; const ti = M.tasks.findIndex((_, i) => !taskDone(mi, i)); if (ti < 0) return; const t = M.tasks[ti];
   const tag = { mi, ti };
-  if (t.k === "read") { const ch = C.chapters.find(c => c.id === t.ch); let i = t.from; while (i < t.to && S.lessons[t.ch + ":" + i]) i++; go("learn", { ch: t.ch, lesson: i, mission: tag }); }
-  else if (t.k === "boards") openBoard(t.ids.find(id => !S.boards[id]) || t.ids[0], tag);
+  const b = bucket();
+  if (t.k === "read") { const ch = C.chapters.find(c => c.id === t.ch); let i = t.from; while (i < t.to && b.lessons[t.ch + ":" + i]) i++; go("learn", { ch: t.ch, lesson: i, mission: tag }); }
+  else if (t.k === "boards") openBoard(t.ids.find(id => !b.boards[id]) || t.ids[0], tag);
   else if (t.k === "quiz") startQuiz(t.pick.ts ? choose(pool(t.pick), t.n) : t.n >= 20 ? mixedSet(t.n) : choose(pool(t.pick), t.n), { title: M.title, mission: tag, pass: t.pass });
   else if (t.k === "mock") startMock(tag);
   else if (t.k === "weak") startWeak(t.n, tag, t.pass);
@@ -696,22 +835,21 @@ function vLearn(m) {
   if (sub && sub.board) return vBoard(m);
   if (sub && sub.ch && sub.lesson != null) return vLesson(m);
   if (sub && sub.ch) return vChapter(m);
-  const NAMES = { mod: "Modules & Packages", str: "Strings", exc: "Exceptions", oop: "OOP", misc: "Miscellaneous", bonus: "31-04 extras" };
-  const COL = { mod: "b", str: "g", exc: "p", oop: "", misc: "b", bonus: "w" };
-  const W = { mod: "12%", str: "18%", exc: "14%", oop: "34%", misc: "22%", bonus: "new exam only" };
-  m.innerHTML = `<h1 class="board-h"><u>Learn</u> · your 6 notebooks</h1><p class="muted">Short lessons from your course. Tap ✓ Got it at the end of each one (+15 XP).</p>
-  <div class="sticky b tape" style="margin:6px 0 18px;max-width:640px"><h3>👩‍🏫 Teacher mode</h3><p class="small">Whiteboard lessons that build up step by step as you tap Next, with drawings, circled traps and a question at the end. ${C.boards.length} boards ready in OOP; more chapters coming.</p><button class="btn blue" data-tm>Start with ${esc((C.boards.find(b => !S.boards[b.id]) || C.boards[0]).title)} ▸</button></div>
-  <div class="chgrid">${C.chapters.filter(c => S.bonus || c.id !== "bonus").map((c, i) => { const n = c.lessons.filter((_, j) => S.lessons[c.id + ":" + j]).length; const cm = chapterMastery(c.id); return `<button class="sticky ${COL[c.id]} chcard ${i % 2 ? "tilt" : "tilt2"}" data-ch="${c.id}"><div class="small muted">Notebook ${c.num} · ${W[c.id]} of the exam</div><h3>${esc(NAMES[c.id])}</h3><p class="small">${n}/${c.lessons.length} lessons read${cm.m != null ? ` · mastery <b>${Math.round(cm.m * 100)}%</b>` : ""}</p><div class="meter" style="height:10px"><i style="width:${n / c.lessons.length * 100}%"></i></div></button>`; }).join("")}</div>`;
-  m.querySelectorAll("[data-ch]").forEach(b => b.onclick = () => go("learn", { ch: b.dataset.ch }));
-  const tmb = m.querySelector("[data-tm]"); if (tmb) tmb.onclick = () => openBoard((C.boards.find(b => !S.boards[b.id]) || C.boards[0]).id);
+  const b = bucket();
+  const weights = C.examWeights || {};
+  m.innerHTML = `<h1 class="board-h"><u>Learn</u></h1><p class="muted">Short lessons from your course. Tap ✓ Got it at the end of each one (+15 XP).</p>
+  ${C.boards.length ? `<div class="sticky b tape" style="margin:6px 0 18px;max-width:640px"><h3>👩‍🏫 Teacher mode</h3><p class="small">Whiteboard lessons that build up step by step, with drawings and circled traps. ${C.boards.length} board${C.boards.length>1?"s":""} ready.</p><button class="btn blue" data-tm>Start with ${esc((C.boards.find(bd => !b.boards[bd.id]) || C.boards[0]).title)} ▸</button></div>` : ""}
+  <div class="chgrid">${C.chapters.filter(c => S.bonus || c.id !== "bonus").map((c, i) => { const n = c.lessons.filter((_, j) => b.lessons[c.id + ":" + j]).length; const cm = chapterMastery(c.id); const w = weights[c.id]; const COLS = ["b","g","p","","b","w"]; return `<button class="sticky ${COLS[i%6]} chcard ${i % 2 ? "tilt" : "tilt2"}" data-ch="${c.id}"><div class="small muted">${w ? Math.round(w*100)+"% of the exam" : "Chapter " + (i+1)}</div><h3>${esc(c.title)}</h3><p class="small">${n}/${c.lessons.length} lessons read${cm.m != null ? ` · mastery <b>${Math.round(cm.m * 100)}%</b>` : ""}</p><div class="meter" style="height:10px"><i style="width:${n / c.lessons.length * 100}%"></i></div></button>`; }).join("")}</div>`;
+  m.querySelectorAll("[data-ch]").forEach(btn => btn.onclick = () => go("learn", { ch: btn.dataset.ch }));
+  const tmb = m.querySelector("[data-tm]"); if (tmb) tmb.onclick = () => openBoard((C.boards.find(bd => !b.boards[bd.id]) || C.boards[0]).id);
 }
 function vChapter(m) {
   const ch = C.chapters.find(c => c.id === sub.ch);
   const cards = C.cards.filter(c => c.src === "nb" + ch.num);
   m.innerHTML = `<button class="link" data-back>← all notebooks</button><h1 class="board-h">${esc(ch.title)}</h1>
    <div class="flex" style="margin-bottom:12px"><button class="btn blue" data-q>Quiz this chapter (10)</button><button class="btn" data-cards>Flashcards (${Math.min(15, cards.length)})</button></div>
-   ${C.boards.some(b => b.ch === ch.id) ? `<div class="sec">👩‍🏫 Teacher mode</div><div class="tmlist">${C.boards.filter(b => b.ch === ch.id).map((b, i) => `<button class="${S.boards[b.id] ? "done" : ""}" data-board="${b.id}"><span class="num">${S.boards[b.id] ? "✓" : i + 1}</span><span>${esc(b.title)}<br><span class="small muted">${b.steps.length} steps</span></span></button>`).join("")}</div><div class="sec">📓 Notebook pages</div>` : ""}
-   <div class="lessonlist">${ch.lessons.map((l, i) => `<button data-l="${i}"><span class="box">${S.lessons[ch.id + ":" + i] ? "✓" : ""}</span><span>${esc(l.title)}</span></button>`).join("")}</div>`;
+   ${C.boards.some(b => b.ch === ch.id) ? `<div class="sec">👩‍🏫 Teacher mode</div><div class="tmlist">${C.boards.filter(b => b.ch === ch.id).map((b, i) => `<button class="${bucket().boards[b.id] ? "done" : ""}" data-board="${b.id}"><span class="num">${bucket().boards[b.id] ? "✓" : i + 1}</span><span>${esc(b.title)}<br><span class="small muted">${b.steps.length} steps</span></span></button>`).join("")}</div><div class="sec">📓 Notebook pages</div>` : ""}
+   <div class="lessonlist">${ch.lessons.map((l, i) => `<button data-l="${i}"><span class="box">${bucket().lessons[ch.id + ":" + i] ? "✓" : ""}</span><span>${esc(l.title)}</span></button>`).join("")}</div>`;
   m.querySelector("[data-back]").onclick = () => go("learn");
   m.querySelector("[data-q]").onclick = () => startQuiz(choose(pool({ chs: [ch.id] }), 10), { title: ch.title });
   m.querySelector("[data-cards]").onclick = () => startCards([ch.id], 15);
@@ -727,10 +865,11 @@ function lessonHTML(h) { // wrap tables for scrolling; re-highlight code
 function vLesson(m) {
   const ch = C.chapters.find(c => c.id === sub.ch), i = sub.lesson, L = ch.lessons[i], key = ch.id + ":" + i;
   const mine = cardsForLesson(ch, i);
+  const bk = bucket();
   m.innerHTML = `<button class="link" data-back>← ${esc(ch.title)}</button>
    <div class="lesson" style="margin-top:10px"><h2>${esc(L.title)}</h2>${lessonHTML(L.html) || "<p class='muted'>Overview lesson.</p>"}
    <div class="flex" style="margin-top:16px;justify-content:space-between">
-     <button class="btn ${S.lessons[key] ? "" : "go big"}" data-got>${S.lessons[key] ? "✓ Read" : "✓ Got it"}</button>
+     <button class="btn ${bk.lessons[key] ? "" : "go big"}" data-got>${bk.lessons[key] ? "✓ Read" : "✓ Got it"}</button>
      <div class="flex">${mine.length ? `<button class="btn blue" data-try>Try its ${mine.length} question${mine.length > 1 ? "s" : ""}</button>` : ""}
      ${i < ch.lessons.length - 1 ? `<button class="btn" data-next>Next ▸</button>` : ""}</div></div></div>
    <p class="small muted">Tip: tap any code block to open it in the Code lab.</p>`;
@@ -738,9 +877,9 @@ function vLesson(m) {
   m.querySelectorAll(".lesson pre").forEach(p => { p.style.cursor = "pointer"; p.title = "Open in Code lab"; p.onclick = () => { labCode = p.dataset.code; go("lab"); }; });
   const got = m.querySelector("[data-got]");
   got.onclick = e => {
-    if (!S.lessons[key]) { S.lessons[key] = TODAY(); addXP(15, e.currentTarget); sfx("ok"); syncReadTasks(); checkBadges(); save(true); }
+    if (!bk.lessons[key]) { bk.lessons[key] = TODAY(); addXP(15, e.currentTarget); sfx("ok"); syncReadTasks(); checkBadges(); save(true); }
     if (sub.mission && missionDone(sub.mission.mi)) { boom(); toast("Mission step done ✓"); }
-    if (sub.mission) { const t = MISSIONS[sub.mission.mi].tasks[sub.mission.ti]; if (taskDone(sub.mission.mi, sub.mission.ti)) return go("today"); if (i < t.to) return go("learn", { ch: ch.id, lesson: i + 1, mission: sub.mission }); return go("today"); }
+    if (sub.mission) { const t = MISSIONS()[sub.mission.mi].tasks[sub.mission.ti]; if (taskDone(sub.mission.mi, sub.mission.ti)) return go("today"); if (i < t.to) return go("learn", { ch: ch.id, lesson: i + 1, mission: sub.mission }); return go("today"); }
     render();
   };
   const nx = m.querySelector("[data-next]"); if (nx) nx.onclick = () => go("learn", { ch: ch.id, lesson: i + 1, mission: sub.mission });
@@ -822,7 +961,7 @@ function vBoard(m) {
     <div class="dots" aria-label="Step ${k + 1} of ${B.steps.length}">${B.steps.map((_, i) => `<i class="${i < k ? "on" : i === k ? "cur" : ""}"></i>`).join("")}</div></div>
     <div class="wb" id="wb">${inner}</div></div>
     <div class="tm-bar"><div class="in"><div class="teacher" aria-hidden="true">👩‍🏫</div><div class="bubble" id="bubble"></div>
-    <div class="tm-ctrl">${last ? `<button class="btn go big" data-done>${S.boards?.[B.id] ? "✓ Done" : "✓ Got it"}</button>` : `<button class="btn go big" data-next>Next ▸</button>`}<button class="btn ghost" data-prev ${k ? "" : "disabled"}>◂ Back</button></div></div></div>`;
+    <div class="tm-ctrl">${last ? `<button class="btn go big" data-done>${bucket().boards?.[B.id] ? "✓ Done" : "✓ Got it"}</button>` : `<button class="btn go big" data-next>Next ▸</button>`}<button class="btn ghost" data-prev ${k ? "" : "disabled"}>◂ Back</button></div></div></div>`;
   // teacher's words type out
   const bub = $("#bubble"), text = B.steps[k].say;
   if (TM.animate && !matchMedia("(prefers-reduced-motion: reduce)").matches) { let i = 0; const iv = setInterval(() => { i += 3; bub.textContent = text.slice(0, i); if (i >= text.length) clearInterval(iv); }, 22); TM.iv && clearInterval(TM.iv); TM.iv = iv; } else bub.textContent = text;
@@ -840,9 +979,9 @@ function vBoard(m) {
   });
   const dn = m.querySelector("[data-done]"); if (dn) dn.onclick = e => {
     hush();
-    if (!S.boards[B.id]) { S.boards[B.id] = TODAY(); addXP(20, e.currentTarget); sfx("level"); boom(); syncReadTasks(); checkBadges(); save(true); }
+    const bk2 = bucket(); if (!bk2.boards[B.id]) { bk2.boards[B.id] = TODAY(); addXP(20, e.currentTarget); sfx("level"); boom(); syncReadTasks(); checkBadges(); save(true); }
     const mis = TM.mission; TM = null;
-    if (mis) { const t = MISSIONS[mis.mi].tasks[mis.ti]; const nextId = t.ids.find(id => !S.boards[id]); if (nextId) return openBoard(nextId, mis); toast("Mission step done ✓"); return go("today"); }
+    if (mis) { const t = MISSIONS()[mis.mi].tasks[mis.ti]; const nextId = t.ids.find(id => !bucket().boards[id]); if (nextId) return openBoard(nextId, mis); toast("Mission step done ✓"); return go("today"); }
     go("learn", { ch: B.ch });
   };
   if (k === 0 && TM.fresh) { TM.fresh = false; TM.animate = true; TM.speak = true; render(); }
@@ -874,7 +1013,7 @@ function startWeak(n, mission, pass) {
 }
 function startReview(mission, n) {
   const list = mistakesDue();
-  if (!list.length) { if (mission) { S.tasks[mission.mi + ":" + mission.ti] = TODAY(); save(true); toast("No mistakes left to redo ✓"); return go("today"); } return; }
+  if (!list.length) { if (mission) { bucket().tasks[mission.mi + ":" + mission.ti] = TODAY(); save(true); toast("No mistakes left to redo ✓"); return go("today"); } return; }
   startQuiz(shuffle(list).slice(0, n), { title: "Redo mistakes", mission, pass: 0 });
 }
 
@@ -966,9 +1105,9 @@ function finish() {
   award("first");
   if (Q.kind === "mcq" && n >= 10 && ok === n) award("perfect");
   let bonus = 20 + (ok === n ? 30 : 0);
-  if (Q.kind === "mock") { bonus = Math.round(pct * 100) + (pct >= .7 ? 100 : 0); S.mocks.push({ at: Date.now(), d: TODAY(), ok, n, by, min: Math.round((Date.now() - Q.start) / 6e4) }); if (pct >= .7) award("mock"); if (pct >= .85) award("mock85"); }
+  if (Q.kind === "mock") { bonus = Math.round(pct * 100) + (pct >= .7 ? 100 : 0); bucket().mocks = bucket().mocks || []; bucket().mocks.push({ at: Date.now(), d: TODAY(), ok, n, by, min: Math.round((Date.now() - Q.start) / 6e4) }); if (pct >= .7) award("mock"); if (pct >= .85) award("mock85"); }
   addXP(bonus); Q.bonus = bonus;
-  if (Q.mission) { const t = MISSIONS[Q.mission.mi].tasks[Q.mission.ti]; const need = t.pass ?? (Q.kind === "mock" ? 0 : .6); if (pct >= need || Q.kind === "mock" || Q.kind === "cards") { S.tasks[Q.mission.mi + ":" + Q.mission.ti] = TODAY(); Q.missionOk = true; } }
+  if (Q.mission) { const t = MISSIONS()[Q.mission.mi].tasks[Q.mission.ti]; const need = t.pass ?? (Q.kind === "mock" ? 0 : .6); if (pct >= need || Q.kind === "mock" || Q.kind === "cards") { bucket().tasks[Q.mission.mi + ":" + Q.mission.ti] = TODAY(); Q.missionOk = true; } }
   checkGoal(); checkBadges(); save(true);
   if (pct >= .7) boom(pct >= .9 ? 2 : 1);
   render();
@@ -982,7 +1121,7 @@ function renderResult(m) {
     <h2 class="${pass ? "mk-green" : "mk-red"}" style="font-size:30px">${msg}</h2>
     <div class="bigscore">${R.ok}/${R.n}</div><div class="muted">${Math.round(R.pct * 100)}%${Q.kind === "mock" ? (pass ? " · PASS ✓" : " · below the 70% pass line") : ""}</div>
     <p style="font-family:var(--f-marker);color:var(--purple);font-size:22px">+${(Q.xp || 0) + Q.bonus} XP</p>
-    ${Q.missionOk ? `<p class="mk-green">✓ Mission step complete</p>` : Q.mission ? `<p class="mk-red">Need ${Math.round((MISSIONS[Q.mission.mi].tasks[Q.mission.ti].pass || .6) * 100)}% to tick this mission step. Try again!</p>` : ""}
+    ${Q.missionOk ? `<p class="mk-green">✓ Mission step complete</p>` : Q.mission ? `<p class="mk-red">Need ${Math.round((MISSIONS()[Q.mission.mi].tasks[Q.mission.ti].pass || .6) * 100)}% to tick this mission step. Try again!</p>` : ""}
     ${Q.kind === "mock" ? `<div class="tbl"><table style="border-collapse:collapse;width:100%"><tr><th style="font-family:var(--f-marker);font-weight:normal;background:var(--blue);color:var(--paper);padding:4px 8px;text-align:left">Section</th><th style="font-family:var(--f-marker);font-weight:normal;background:var(--blue);color:var(--paper);padding:4px 8px">Score</th></tr>${Object.entries(R.by).map(([c, [a, b]]) => `<tr><td style="padding:4px 8px;border:1.5px solid var(--grid);text-align:left">${NAMES[c]}</td><td style="padding:4px 8px;border:1.5px solid var(--grid)">${a}/${b} (${Math.round(a / b * 100)}%)</td></tr>`).join("")}</table></div>` : ""}
     <div class="flex" style="justify-content:center;margin-top:14px">
       ${missed.length && Q.kind !== "cards" ? `<button class="btn red" data-redo>Redo my ${missed.length} mistake${missed.length > 1 ? "s" : ""}</button>` : ""}
@@ -1112,21 +1251,21 @@ function vMe(m) {
   <div class="row"><div class="sticky tape"><div class="small muted">Level ${L.n + 1}</div><h2 style="font-size:28px" class="mk-blue">${esc(L.title)}</h2><p>${S.xp} XP · ${L.toNext} to the next level</p><div class="bar"><i style="width:${L.pct}%"></i></div></div>
   <div class="statgrid"><div class="stat"><b>${streak()}</b><span>day streak (best ${S.bestStreak || 0})</span></div><div class="stat"><b>${S.totalOk}</b><span>correct answers</span></div><div class="stat"><b>${acc}%</b><span>accuracy</span></div><div class="stat"><b>${Math.round(mins)}</b><span>minutes studied</span></div></div></div>
   <div class="sec">Badges</div><div class="badges">${BADGES.map(b => `<div class="badge ${S.badges[b[0]] ? "got" : ""}"><div class="ic">${b[1]}</div><b>${esc(b[2])}</b><small>${esc(b[3])}</small></div>`).join("")}</div>
-  <div class="sec">Mock exams</div>${S.mocks.length ? `<div class="statgrid">${S.mocks.slice().reverse().map(x => `<div class="stat" style="${x.ok / x.n >= .7 ? "background:var(--g)" : "background:var(--p)"}"><span>${fmtDay(x.d)}</span><b>${Math.round(x.ok / x.n * 100)}%</b><span>${x.ok}/${x.n} · ${x.min} min</span></div>`).join("")}</div>` : `<p class="muted">No mock exams yet. Mock #1 is mission 10 of your plan.</p>`}
+  <div class="sec">Mock exams</div>${(bucket().mocks||[]).length ? `<div class="statgrid">${(bucket().mocks||[]).slice().reverse().map(x => `<div class="stat" style="${x.ok / x.n >= .7 ? "background:var(--g)" : "background:var(--p)"}"><span>${fmtDay(x.d)}</span><b>${Math.round(x.ok / x.n * 100)}%</b><span>${x.ok}/${x.n} · ${x.min} min</span></div>`).join("")}</div>` : `<p class="muted">No mock exams yet. Mock #1 is mission 10 of your plan.</p>`}
   <div class="sec">Settings</div><div class="sticky w" style="max-width:560px">
-   <div class="field"><label for="ed1">Exam date</label><input type="date" id="ed1" value="${S.examDate}"></div>
+   <div class="field"><label for="ed1">Exam date</label><input type="date" id="ed1" value="${examDate()}"></div>
    <div class="field"><label for="gm">Daily goal (minutes)</label><select id="gm">${[10, 15, 20, 30, 45].map(v => `<option ${v === S.goalMin ? "selected" : ""}>${v}</option>`).join("")}</select></div>
    <label class="toggle"><input type="checkbox" id="snd" ${S.sound ? "checked" : ""}> Sounds</label>
    <label class="toggle"><input type="checkbox" id="bon" ${S.bonus ? "checked" : ""}> Include PCAP-31-04 extras (turn off if your exam is 31-03)</label>
    <label class="toggle" style="margin-top:6px"><span>Theme:</span><select id="th">${THEMES.map(([v, ic, name]) => `<option value="${v}" ${v === themePref ? "selected" : ""}>${ic} ${name}</option>`).join("")}</select></label>
-   <p class="small muted" style="margin-top:10px">${syncState === "synced" ? "☁️ Progress syncs between your phone and laptop." : "💾 Progress is saved on this device. It syncs when you open the app signed in to Claude."}</p>
+   <p class="small muted" style="margin-top:10px">${syncState === "synced" ? "☁️ Progress syncs between your phone and laptop." : "💾 Progress is saved on this device. Sync available when signed in."}</p>
    <button class="btn red ghost" id="reset" style="margin-top:6px">Reset all progress</button></div>`;
-  $("#ed1").onchange = e => { if (e.target.value) { S.examDate = e.target.value; save(true); refreshChrome(); toast("Exam date saved. Your plan was re-spread."); } };
+  $("#ed1").onchange = e => { if (e.target.value) { bucket().examDate = e.target.value; if (SUBJ) SUBJ.examDate = e.target.value; save(true); refreshChrome(); toast("Exam date saved."); } };
   $("#gm").onchange = e => { S.goalMin = +e.target.value; save(true); };
   $("#snd").onchange = e => { S.sound = e.target.checked; save(true); };
   $("#bon").onchange = e => { S.bonus = e.target.checked; save(true); };
   $("#th").onchange = e => setTheme(e.target.value);
-  $("#reset").onclick = () => { const mm = modal(`<h2>Reset everything?</h2><p>XP, streak, badges and all answers will be erased on every device.</p>`, `<button class="btn" data-close>Cancel</button><button class="btn red" data-really>Erase</button>`); mm.querySelector("[data-really]").onclick = () => { mm.remove(); const keep = { examDate: S.examDate, goalMin: S.goalMin }; S = Object.assign(fresh(), keep, { upd: Date.now(), resetAt: Date.now() }); save(true); render(); toast("Fresh start!"); }; };
+  $("#reset").onclick = () => { const mm = modal(`<h2>Reset everything?</h2><p>XP, streak, badges and all answers will be erased on every device.</p>`, `<button class="btn" data-close>Cancel</button><button class="btn red" data-really>Erase</button>`); mm.querySelector("[data-really]").onclick = () => { mm.remove(); const keep = { goalMin: S.goalMin }; S = Object.assign(fresh(), keep, { upd: Date.now(), resetAt: Date.now() }); save(true); render(); toast("Fresh start!"); }; };
 }
 
 /* ================= study-time tracking ================= */
@@ -1146,7 +1285,7 @@ addEventListener("visibilitychange", () => { if (document.visibilityState === "h
 /* themes: auto (device by day, night 21:00–07:00) · light · dark · night */
 const THEMES = [["auto", "🌗", "Auto", "Your phone's setting by day, Night from 9pm to 7am"], ["light", "☀️", "White", "Whiteboard"], ["dark", "🌙", "Dark", "Chalkboard"], ["night", "🌃", "Night", "Warm and dim, easy on the eyes"]];
 let themePref = "auto";
-try { themePref = localStorage.getItem("pcapquest.theme") || "auto"; } catch (e) {}
+try { themePref = localStorage.getItem("studyquest.theme") || "auto"; } catch (e) {}
 if (themePref === "") themePref = "auto";
 function applyTheme() {
   const h = new Date().getHours(), root = document.documentElement;
@@ -1154,7 +1293,7 @@ function applyTheme() {
   if (t) root.dataset.theme = t; else delete root.dataset.theme;
   const btn = $("#thbtn"); if (btn) btn.textContent = (THEMES.find(x => x[0] === themePref) || THEMES[0])[1];
 }
-function setTheme(v) { themePref = v; try { localStorage.setItem("pcapquest.theme", v); } catch (e) {} applyTheme(); }
+function setTheme(v) { themePref = v; try { localStorage.setItem("studyquest.theme", v); } catch (e) {} applyTheme(); }
 applyTheme(); setInterval(applyTheme, 60e3);
 $("#thbtn").onclick = e => {
   e.stopPropagation(); const old = $(".thmenu"); if (old) return old.remove();
@@ -1166,11 +1305,18 @@ $("#thbtn").onclick = e => {
   setTimeout(() => addEventListener("click", function off(ev) { if (!m.contains(ev.target)) { m.remove(); removeEventListener("click", off); } }), 0);
 };
 { const r = location.hash.slice(1); if (TABS.some(t => t[0] === r)) route = r; }
-render();
-fetch("content.json").then(r => r.json()).then(data => {
-  C = data;
-  syncReadTasks(); render();
-}).catch(() => { $("#main").innerHTML = `<div class="sticky p" style="max-width:460px;margin:40px auto"><h2>Couldn't load the questions</h2><p>Check your connection, then reload the page.</p></div>`; });
+
+// subject switcher button
+$("#subjbtn").onclick = () => { activeSubjectId = null; C = null; SUBJ = null; quiz = null; TM = null; route = "today"; render(); };
+
+// boot: load subjects list, then auto-load last subject
+fetch("subjects.json").then(r => r.json()).then(list => {
+  SUBJECTS = list;
+  const last = (() => { try { return localStorage.getItem(LSS); } catch(e) { return null; } })();
+  const found = last && SUBJECTS.find(s => s.id === last);
+  if (found) loadSubject(found.id); else render();
+}).catch(() => { render(); });
+
 </script>
 
 </body></html>
