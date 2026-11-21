@@ -15,7 +15,7 @@
     "icon": "🦄",
     "type": "django",
     "examDate": "",
-    "examFormat": "MCQ + written answers + practical",
+    "examFormat": "Part 1 MCQ (6pts) · Part 2 written (6pts) · Part 3 code problem (8pts) · 1h30",
     "color": "green",
     "description": "Django web framework — models, views, templates, forms, ORM"
   }
