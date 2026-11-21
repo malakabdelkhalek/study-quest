@@ -190,13 +190,13 @@
       ]
     },
     {
-      "title": "Models & Migrations",
-      "sub": "models.Model, fields, __str__, makemigrations, migrate",
+      "title": "Model Relations",
+      "sub": "ForeignKey, OneToOne, ManyToMany, on_delete, related_name",
       "tasks": [
         {
           "k": "read",
           "label": "Read the 7 lessons",
-          "ch": "ch3",
+          "ch": "ch5",
           "from": 0,
           "to": 6
         },
@@ -204,9 +204,9 @@
           "k": "boards",
           "label": "Teacher mode: 3 boards",
           "ids": [
-            "dj6",
-            "dj7",
-            "dj8"
+            "dj11",
+            "dj12",
+            "dj13"
           ]
         },
         {
@@ -214,8 +214,7 @@
           "label": "Quiz: 10 questions",
           "pick": {
             "ts": [
-              "dj.models",
-              "dj.migrations"
+              "dj.relations"
             ]
           },
           "n": 10,
@@ -225,49 +224,49 @@
           "k": "cards",
           "label": "Flashcards: written + code",
           "chs": [
-            "ch3"
+            "ch5"
           ],
-          "n": 15
+          "n": 10
         }
       ]
     },
     {
-      "title": "Django Admin",
-      "sub": "register models, createsuperuser, ModelAdmin",
+      "title": "Templates",
+      "sub": "tags, filters, inheritance, static files, csrf_token",
       "tasks": [
         {
           "k": "read",
-          "label": "Read the 5 lessons",
-          "ch": "ch4",
+          "label": "Read the 7 lessons",
+          "ch": "ch6",
           "from": 0,
-          "to": 4
+          "to": 6
         },
         {
           "k": "boards",
           "label": "Teacher mode: 2 boards",
           "ids": [
-            "dj9",
-            "dj10"
+            "dj14",
+            "dj15"
           ]
         },
         {
           "k": "quiz",
-          "label": "Quiz: 5 questions",
+          "label": "Quiz: 8 questions",
           "pick": {
             "ts": [
-              "dj.admin"
+              "dj.templates"
             ]
           },
-          "n": 5,
+          "n": 8,
           "pass": 0.6
         },
         {
           "k": "cards",
-          "label": "Flashcards: admin exercises",
+          "label": "Flashcards: written + code",
           "chs": [
-            "ch4"
+            "ch6"
           ],
-          "n": 8
+          "n": 10
         }
       ]
     }
@@ -432,76 +431,86 @@
       ]
     },
     {
-      "id": "ch3",
-      "num": 3,
-      "title": "Models & Migrations",
+      "id": "ch5",
+      "num": 5,
+      "title": "Model Relations — ForeignKey, OneToOne, ManyToMany",
       "lessons": [
         {
-          "title": "1. What is a Model?",
-          "t": "dj.models",
-          "html": "<ul><li>A <b>model</b> is a Python class that maps to a database table. Each attribute = one column. Django generates all the SQL for you.</li><li>All models inherit from <code>models.Model</code>.</li><li>The mapping: <span class='y'>class → table, attribute → column, instance → row</span>.</li><li>You never write <code>CREATE TABLE</code> — Django does it via <b>migrations</b>.</li><li>Models also power the Admin panel and ModelForms — one definition, three uses.</li></ul>"
+          "title": "1. Why model relations?",
+          "t": "dj.relations",
+          "html": "<ul><li>Real data has relationships. A <b>Meeting</b> belongs to a <b>Room</b>. A <b>Book</b> belongs to an <b>Author</b>. A <b>Student</b> can enroll in many <b>Courses</b>.</li><li>Django has three relationship field types that map directly to database foreign keys and join tables: <code>ForeignKey</code>, <code>OneToOneField</code>, <code>ManyToManyField</code>.</li><li>You define the relationship in Python — Django generates all the SQL.</li></ul>"
         },
         {
-          "title": "2. Field Types",
-          "t": "dj.models",
-          "html": "<ul><li><code>CharField(max_length=N)</code> — short text. <span class='r'>max_length is required.</span></li><li><code>TextField()</code> — long text, no max_length needed.</li><li><code>IntegerField()</code> — whole numbers.</li><li><code>DecimalField(max_digits=N, decimal_places=N)</code> — exact decimals. Use for money, not FloatField.</li><li><code>DateField()</code> — a date. <code>DateTimeField()</code> — date + time. <code>TimeField()</code> — time only.</li><li><code>EmailField()</code> — like CharField but validates email format.</li><li><code>BooleanField()</code> — True/False.</li><li><span class='r'>Trap:</span> <code>CharField</code> without <code>max_length</code> raises a system check error. <code>TextField</code> does not need it.</li></ul>"
+          "title": "2. ForeignKey — one-to-many",
+          "t": "dj.relations",
+          "html": "<ul><li>Use <code>ForeignKey</code> when <b>many</b> objects belong to <b>one</b> parent. One Room → many Meetings. One Author → many Books.</li><li>Defined on the <i>many</i> side:</li><pre><code>class Meeting(models.Model):\n    room = models.ForeignKey(Room, on_delete=models.CASCADE)</code></pre><li><b>Forward access</b> (meeting → room): <code>meeting.room.name</code></li><li><b>Reverse access</b> (room → all its meetings): <code>room.meeting_set.all()</code></li><li>Django auto-creates the reverse accessor named <code>modelname_set</code>. Use <code>related_name='meetings'</code> to rename it: <code>room.meetings.all()</code></li><li><span class='r'>Trap:</span> <code>on_delete</code> is <b>required</b>. Missing it raises <code>TypeError</code>.</li></ul>"
         },
         {
-          "title": "3. Field Options",
-          "t": "dj.models",
-          "html": "<ul><li><code>default=value</code> — used if you don't supply one: <code>duration = models.IntegerField(default=1)</code>.</li><li><code>null=True</code> — allows NULL in the database column.</li><li><code>blank=True</code> — allows the field to be empty <i>in a form</i>.</li><li><span class='r'>null</span> is a database concept. <span class='g'>blank</span> is a form-validation concept. They are independent.</li><li><code>auto_now_add=True</code> — sets the value to now when first created. Read-only after that.</li><li><span class='r'>Trap:</span> Do not use <code>null=True</code> on a CharField/TextField — you'll have both NULL and '' as 'empty', making queries inconsistent.</li></ul>"
+          "title": "3. on_delete options",
+          "t": "dj.relations",
+          "html": "<ul><li><code>on_delete</code> tells Django what to do when the <b>parent</b> is deleted.</li><li><code>models.CASCADE</code> — delete all children. If Room is deleted → all its Meetings are deleted. <span class='g'>Most common.</span></li><li><code>models.SET_NULL</code> — set the FK to NULL. Requires <code>null=True</code> on the field. Meeting stays but <code>meeting.room</code> becomes <code>None</code>.</li><li><code>models.PROTECT</code> — prevent deletion. If a Room has Meetings, you cannot delete the Room (raises <code>ProtectedError</code>).</li><li><code>models.SET_DEFAULT</code> — set FK to the field's default value.</li><li><code>models.DO_NOTHING</code> — do nothing. Dangerous — can break referential integrity.</li><li><span class='r'>Trap:</span> <code>SET_NULL</code> without <code>null=True</code> on the field causes a database error.</li></ul>"
         },
         {
-          "title": "4. __str__ method",
-          "t": "dj.models",
-          "html": "<ul><li><code>__str__</code> controls how an object is displayed as text — in the admin panel, in <code>print()</code>, and in <code>{{ object }}</code> in templates.</li><li>Without it, Django shows <code>Meeting object (1)</code> — useless.</li><li>Professor's example (verified output: <code>Réunion at 09:00:00 on 2027-01-15</code>):<pre><code>def __str__(self):\n    return f\"{self.title} at {self.start_time} on {self.date}\"</code></pre></li><li><span class='r'>Trap:</span> <code>__str__</code> must return a <b>string</b>. Returning an integer raises <code>TypeError</code>.</li></ul>"
+          "title": "4. OneToOneField",
+          "t": "dj.relations",
+          "html": "<ul><li>Use <code>OneToOneField</code> when each object is linked to exactly <b>one</b> other. One User → one Profile.</li><pre><code>class Profile(models.Model):\n    user = models.OneToOneField(User, on_delete=models.CASCADE)\n    bio = models.TextField()</code></pre><li><b>Forward:</b> <code>profile.user.username</code></li><li><b>Reverse:</b> <code>user.profile</code> — Django creates a reverse accessor automatically (not <code>profile_set</code> — just <code>profile</code> since it's one-to-one).</li><li>Use case: extend the built-in User model without modifying it.</li><li><span class='r'>Trap:</span> Accessing <code>user.profile</code> when no Profile exists raises <code>RelatedObjectDoesNotExist</code>.</li></ul>"
         },
         {
-          "title": "5. The Migration Workflow",
-          "t": "dj.migrations",
-          "html": "<ul><li>Migrations = Python scripts that describe database schema changes.</li><li><b>3-step workflow — always in this order:</b><ol><li>Change your model in <code>models.py</code></li><li><code>python manage.py makemigrations</code> — generates the script</li><li><code>python manage.py migrate</code> — runs the script on the database</li></ol></li><li><span class='r'>Trap:</span> Editing <code>models.py</code> does NOT change the database automatically. Forgetting <code>migrate</code> causes <code>OperationalError: no such column</code>.</li></ul>"
+          "title": "5. ManyToManyField",
+          "t": "dj.relations",
+          "html": "<ul><li>Use <code>ManyToManyField</code> when many objects relate to many others. A Student can enroll in many Courses. A Course has many Students.</li><pre><code>class Course(models.Model):\n    name = models.CharField(max_length=100)\n\nclass Student(models.Model):\n    name = models.CharField(max_length=100)\n    courses = models.ManyToManyField(Course)</code></pre><li>Django automatically creates an <b>intermediate join table</b> (e.g. <code>student_courses</code>) — you don't define it.</li><li><b>Add:</b> <code>student.courses.add(course)</code></li><li><b>Remove:</b> <code>student.courses.remove(course)</code></li><li><b>Query:</b> <code>student.courses.all()</code></li><li><span class='r'>Trap:</span> M2M fields must be defined on one side only. Django handles both directions.</li></ul>"
         },
         {
-          "title": "6. Migration Commands",
-          "t": "dj.migrations",
-          "html": "<ul><li><code>python manage.py makemigrations</code> — generates a new migration file in <code>migrations/</code>.</li><li><code>python manage.py migrate</code> — applies all pending migrations to the database.</li><li><code>python manage.py showmigrations</code> — lists all migrations: <code>[X]</code> applied, <code>[ ]</code> pending.</li><li><code>python manage.py sqlmigrate meetings 0001</code> — shows the actual SQL without running it. Good for understanding and debugging.</li><li><b>Real output from the professor's project:</b><pre><code>$ python manage.py showmigrations meetings\nmeetings\n [X] 0001_initial</code></pre></li></ul>"
+          "title": "6. related_name",
+          "t": "dj.relations",
+          "html": "<ul><li><code>related_name</code> customises the reverse accessor name on the parent model.</li><pre><code>class Meeting(models.Model):\n    room = models.ForeignKey(Room,\n        on_delete=models.CASCADE,\n        related_name='meetings')  # instead of meeting_set</code></pre><li>Now: <code>room.meetings.all()</code> instead of <code>room.meeting_set.all()</code></li><li>Useful when a model has two FKs to the same model — without <code>related_name</code> Django raises a clash error.</li><li>Also used to suppress the reverse accessor: <code>related_name='+'</code> (no reverse access).</li></ul>"
         },
         {
-          "title": "7. Professor's Models — Meeting Planner",
-          "t": "dj.models",
-          "html": "<ul><li>These are the exact models from the professor's slides — verified running in Django 5.1:</li><pre><code>from django.db import models\nfrom datetime import time\n\nclass Room(models.Model):\n    name = models.CharField(max_length=50)\n    floor = models.IntegerField()\n    room_number = models.IntegerField()\n    def __str__(self):\n        return f\"{self.name}: room {self.room_number} on floor {self.floor}\"\n\nclass Meeting(models.Model):\n    title = models.CharField(max_length=200)\n    date = models.DateField()\n    start_time = models.TimeField(default=time(9))\n    duration = models.IntegerField(default=1)\n    def __str__(self):\n        return f\"{self.title} at {self.start_time} on {self.date}\"</code></pre><li>Verified: <code>str(room)</code> → <code>Salle A: room 201 on floor 2</code></li><li>Verified: <code>str(meeting)</code> → <code>Réunion at 09:00:00 on 2027-01-15</code></li></ul>"
+          "title": "7. Professor's Meeting + Room relation",
+          "t": "dj.relations",
+          "html": "<ul><li>From the professor's slides — the final Meeting model with the Room ForeignKey (verified running):</li><pre><code>class Meeting(models.Model):\n    title = models.CharField(max_length=200)\n    date = models.DateField()\n    start_time = models.TimeField(default=time(9))\n    duration = models.IntegerField(default=1)\n    room = models.ForeignKey(Room, on_delete=models.CASCADE)\n\n    def __str__(self):\n        return f\"{self.title} at {self.start_time} on {self.date}\"</code></pre><li>Verified: <code>m.room.name</code> → <code>'Conf A'</code></li><li>Verified: <code>r.meeting_set.all()</code> → all meetings in that room</li><li>Verified: deleting a Room → all its Meetings are deleted (CASCADE)</li></ul>"
         }
       ]
     },
     {
-      "id": "ch4",
-      "num": 4,
-      "title": "Django Admin",
+      "id": "ch6",
+      "num": 6,
+      "title": "Templates — Tags, Filters, Inheritance, Static",
       "lessons": [
         {
-          "title": "1. What is the Admin Panel?",
-          "t": "dj.admin",
-          "html": "<ul><li>Django's built-in <b>admin interface</b> gives you a full CRUD web UI for your models — generated automatically, no HTML needed.</li><li>It's the <i>back-office</i> for staff, not for end-users.</li><li>Access at <code>http://127.0.0.1:8000/admin/</code> after creating a superuser.</li><li>Built on <code>django.contrib.admin</code> which is in <code>INSTALLED_APPS</code> by default.</li><li>The URL is wired up by default: <code>path('admin/', admin.site.urls)</code>.</li></ul>"
+          "title": "1. Template language overview",
+          "t": "dj.templates",
+          "html": "<ul><li>Django templates are HTML files with extra syntax. Three types of constructs:</li><li><code>{{ variable }}</code> — outputs a value from the context.</li><li><code>{% tag %}</code> — logic: loops, conditions, inheritance, loading tag libraries.</li><li><code>{{ variable|filter }}</code> — transforms a value before displaying it.</li><li><code>{# comment #}</code> — single-line comment (not sent to browser).</li><li>Everything else is plain HTML — Django passes it through unchanged.</li><li><span class='r'>Trap:</span> Django uses <code>{% %}</code> not <code>&lt;% %&gt;</code> (that is PHP/ASP/ERB). And <code>{{ }}</code> not <code>&lt;%= %&gt;</code>.</li></ul>"
         },
         {
-          "title": "2. Register a Model",
-          "t": "dj.admin",
-          "html": "<ul><li>To make a model appear in the admin, register it in <code>admin.py</code>:</li><pre><code>from django.contrib import admin\nfrom .models import Meeting\n\nadmin.site.register(Meeting)</code></pre><li>That's it. Django generates the full list, add, edit, and delete views automatically.</li><li><span class='r'>Trap:</span> If you forget to register a model, it simply won't appear — no error. Easy to miss.</li></ul>"
+          "title": "2. for and empty",
+          "t": "dj.templates",
+          "html": "<ul><li>Loop over a list from the context:</li><pre><code>{% for meeting in meetings %}\n  &lt;li&gt;{{ meeting.title }}&lt;/li&gt;\n{% empty %}\n  &lt;li&gt;No meetings yet.&lt;/li&gt;\n{% endfor %}</code></pre><li><code>{% empty %}</code> runs when the list is empty — saves an extra <code>{% if %}</code>.</li><li>Inside the loop: <code>{{ forloop.counter }}</code> (1-based), <code>{{ forloop.counter0 }}</code> (0-based), <code>{{ forloop.first }}</code>, <code>{{ forloop.last }}</code>.</li><li><span class='r'>Trap:</span> Forgetting <code>{% endfor %}</code> causes a <code>TemplateSyntaxError</code>.</li></ul>"
         },
         {
-          "title": "3. Create a Superuser",
-          "t": "dj.admin",
-          "html": "<ul><li>Only users with <code>is_staff=True</code> or <code>is_superuser=True</code> can log into the admin.</li><li>Create the first superuser with:<pre><code>python manage.py createsuperuser</code></pre></li><li>Django prompts for username, email, and password.</li><li><span class='r'>Trap:</span> Run <code>migrate</code> first. Running <code>createsuperuser</code> before <code>migrate</code> gives <code>no such table: auth_user</code>.</li></ul>"
+          "title": "3. if, elif, else",
+          "t": "dj.templates",
+          "html": "<ul><li>Conditional logic:</li><pre><code>{% if user.is_authenticated %}\n  &lt;p&gt;Hello, {{ user.username }}!&lt;/p&gt;\n{% elif user.is_staff %}\n  &lt;p&gt;Admin area&lt;/p&gt;\n{% else %}\n  &lt;p&gt;Please log in.&lt;/p&gt;\n{% endif %}</code></pre><li>Operators: <code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, <code>in</code>, <code>not in</code>, <code>and</code>, <code>or</code>, <code>not</code>.</li><li><span class='r'>Trap:</span> Django templates do not support arbitrary Python expressions inside <code>{% if %}</code>. Keep logic simple — move complex conditions to the view.</li></ul>"
         },
         {
-          "title": "4. __str__ in the Admin",
-          "t": "dj.admin",
-          "html": "<ul><li>Without <code>__str__</code>, the admin lists your objects as <code>Meeting object (1)</code>, <code>Meeting object (2)</code>…</li><li>With <code>__str__</code>, it shows meaningful names: <code>Réunion at 09:00:00 on 2027-01-15</code>.</li><li>Always define <code>__str__</code> on every model — it affects the admin, the shell, and templates.</li></ul>"
+          "title": "4. url and csrf_token",
+          "t": "dj.templates",
+          "html": "<ul><li><code>{% url 'name' %}</code> — generates a URL by name (reverse), so paths never get hardcoded:</li><pre><code>&lt;a href=\"{% url 'detail' meeting.id %}\"&gt;View&lt;/a&gt;\n&lt;!-- generates: /meetings/5/ --&gt;</code></pre><li><code>{% csrf_token %}</code> — required inside every POST form. Protects against Cross-Site Request Forgery attacks. Without it, Django returns a 403 Forbidden error on form submission.</li><pre><code>&lt;form method=\"post\"&gt;\n  {% csrf_token %}\n  {{ form.as_p }}\n  &lt;button type=\"submit\"&gt;Save&lt;/button&gt;\n&lt;/form&gt;</code></pre><li><span class='r'>Trap:</span> Forgetting <code>{% csrf_token %}</code> in a POST form → 403 error. This was question 1 on the actual exam.</li></ul>"
         },
         {
-          "title": "5. Customising Admin (ModelAdmin)",
-          "t": "dj.admin",
-          "html": "<ul><li>To customise how a model appears, create a <code>ModelAdmin</code> class:</li><pre><code>from django.contrib import admin\nfrom .models import Meeting\n\n@admin.register(Meeting)\nclass MeetingAdmin(admin.ModelAdmin):\n    list_display  = ['title', 'date', 'start_time', 'duration']\n    list_filter   = ['date']\n    search_fields = ['title']</code></pre><li><code>list_display</code> — columns in the list view.</li><li><code>list_filter</code> — sidebar filter panel.</li><li><code>search_fields</code> — adds a search box.</li><li><code>@admin.register(Meeting)</code> = same as <code>admin.site.register(Meeting, MeetingAdmin)</code> — just shorter.</li><li><span class='r'>Trap:</span> Typos in <code>list_display</code> cause <code>ImproperlyConfigured</code> errors.</li></ul>"
+          "title": "5. extends, block, include",
+          "t": "dj.templates",
+          "html": "<ul><li><b>{% extends %}</b> — inherit a base template. Must be the <b>first line</b> of the child template.</li><li><b>{% block name %}{% endblock %}</b> — a named hole in the base; children fill it in.</li><li><b>{% include 'fragment.html' %}</b> — insert another template inline (no inheritance).</li><pre><code><!-- base.html -->\n&lt;html&gt;\n&lt;head&gt;&lt;title&gt;{% block title %}{% endblock %}&lt;/title&gt;&lt;/head&gt;\n&lt;body&gt;{% block content %}{% endblock %}&lt;/body&gt;\n&lt;/html&gt;\n\n<!-- child.html -->\n{% extends \"base.html\" %}\n{% block title %}Home{% endblock %}\n{% block content %}\n  &lt;h1&gt;Welcome&lt;/h1&gt;\n{% endblock %}</code></pre><li><span class='r'>Traps:</span> <code>{% extends %}</code> must be line 1. Block names must match exactly. A child cannot add content outside blocks.</li></ul>"
+        },
+        {
+          "title": "6. load static and static files",
+          "t": "dj.templates",
+          "html": "<ul><li>To link CSS/JS/images, use the <code>static</code> template tag:</li><pre><code>{% load static %}\n&lt;link rel=\"stylesheet\" href=\"{% static 'website/style.css' %}\"&gt;\n&lt;img src=\"{% static 'website/logo.png' %}\"&gt;</code></pre><li>File must exist at: <code>appname/static/appname/filename</code></li><li>Setting in <code>settings.py</code>: <code>STATIC_URL = 'static/'</code></li><li>For production: <code>python manage.py collectstatic</code> gathers all files into <code>STATIC_ROOT</code>.</li><li><span class='r'>Trap:</span> Forgetting <code>{% load static %}</code> before <code>{% static %}</code> → <code>TemplateSyntaxError: Invalid block tag 'static'</code>.</li></ul>"
+        },
+        {
+          "title": "7. Filters",
+          "t": "dj.templates",
+          "html": "<ul><li>Filters transform a value: <code>{{ value|filtername }}</code> or <code>{{ value|filtername:arg }}</code>.</li><li><code>{{ name|upper }}</code> → <code>MALAK</code></li><li><code>{{ name|lower }}</code> → <code>malak</code></li><li><code>{{ items|length }}</code> → <code>3</code></li><li><code>{{ text|truncatechars:10 }}</code> → <code>Hello wor…</code></li><li><code>{{ value|default:'N/A' }}</code> → shows 'N/A' if value is empty/falsy</li><li><code>{{ date|date:'d/m/Y' }}</code> → <code>15/01/2027</code></li><li><code>{{ html|safe }}</code> → renders HTML tags (don't use on user input!)</li><li>Chain filters: <code>{{ name|lower|truncatechars:20 }}</code></li><li><span class='r'>Trap:</span> <code>{{ text|safe }}</code> on untrusted user input = XSS vulnerability. Only use <code>|safe</code> on content you control.</li></ul>"
         }
       ]
     }
@@ -1012,172 +1021,160 @@
       "lab": 4
     },
     {
-      "id": "c28",
-      "q": "[Part 2] What is the Django ORM? Why use it instead of raw SQL?",
+      "id": "c42",
+      "q": "[Part 2] What are the three Django relation field types and when do you use each?",
       "code": null,
       "out": null,
-      "ans": "ORM = Object-Relational Mapping. It bridges Python objects and database tables. Models map to tables, attributes map to columns, instances map to rows. Django generates all SQL automatically. Benefits: (1) Write Python instead of SQL. (2) Switch databases without changing your code. (3) Built-in SQL injection protection.",
-      "why": "Exam Part 2 always asks to explain the ORM. Know the mapping: class=table, attribute=column, instance=row.",
-      "t": "dj.models",
-      "src": "ch3",
+      "ans": "ForeignKey — one-to-many: many Meetings → one Room. Defined on the 'many' side.\nOneToOneField — one-to-one: one User → one Profile. Each object linked to exactly one other.\nManyToManyField — many-to-many: many Students ↔ many Courses. Django creates a join table automatically.",
+      "why": "Exam Part 2 and Part 3 test knowing which field type to use. ForeignKey appears in every exam problem.",
+      "t": "dj.relations",
+      "src": "ch5",
       "ls": 1,
-      "lab": 3
+      "lab": 5
     },
     {
-      "id": "c29",
-      "q": "What is the difference between null=True and blank=True on a model field?",
+      "id": "c43",
+      "q": "What does on_delete=models.CASCADE do?",
       "code": null,
       "out": null,
-      "ans": "null=True = database level: allows NULL in the column.\nblank=True = form validation level: allows the field to be submitted empty.\nThey are independent — you can have one, both, or neither.\nRule: for text fields (CharField, TextField) use blank=True only. Using null=True on text fields stores both NULL and '' as 'empty', causing inconsistent queries.",
-      "why": "Classic exam trap — students confuse null (database) with blank (forms). They test different layers.",
-      "t": "dj.models",
-      "src": "ch3",
+      "ans": "When the parent object is deleted, all related child objects are also deleted automatically.\nExample: Room deleted → all Meetings in that Room are deleted.\nVerified: r.delete() → Meeting.objects.get(pk=m.pk) raises DoesNotExist.",
+      "why": "on_delete is required on ForeignKey. CASCADE is the most common choice and appears in every exam models.py completion.",
+      "t": "dj.relations",
+      "src": "ch5",
       "ls": 3,
-      "lab": 3
+      "lab": 5
     },
     {
-      "id": "c30",
-      "q": "What are the 3 steps of the migration workflow?",
+      "id": "c44",
+      "q": "What is the difference between on_delete=CASCADE, SET_NULL and PROTECT?",
       "code": null,
       "out": null,
-      "ans": "1. Edit models.py (add, change, or delete a field or model)\n2. python manage.py makemigrations   — generates the script\n3. python manage.py migrate           — runs the script on the DB\n\nNever skip step 2 or 3. Always in this order.",
-      "why": "The most common Django mistake: changing a model and forgetting to migrate. Results in OperationalError: no such column.",
-      "t": "dj.migrations",
-      "src": "ch3",
-      "ls": 5,
-      "lab": 3
+      "ans": "CASCADE — delete all children when parent is deleted. Most common.\nSET_NULL — set FK to NULL when parent deleted. Requires null=True on the field. Child objects are kept.\nPROTECT — prevent deletion of parent if any children exist. Raises ProtectedError.",
+      "why": "Exam MCQ tests which on_delete option to use in a given scenario.",
+      "t": "dj.relations",
+      "src": "ch5",
+      "ls": 3,
+      "lab": 5
     },
     {
-      "id": "c31",
-      "q": "What does each migration command do?",
-      "code": null,
-      "out": null,
-      "ans": "makemigrations — reads models.py, diffs vs last migration, writes a new script in migrations/\nmigrate — runs pending scripts, creates/alters DB tables\nshowmigrations — lists all migrations: [X] applied, [ ] pending\nsqlmigrate app 0001 — shows the SQL migrate would run, without running it",
-      "why": "Exam often asks: 'Which command applies migrations?' Answer: migrate (not makemigrations).",
-      "t": "dj.migrations",
-      "src": "ch3",
-      "ls": 6,
-      "lab": 3
-    },
-    {
-      "id": "c32",
-      "q": "What does __str__ do and why does every model need it?",
-      "code": "class Meeting(models.Model):\n    title = models.CharField(max_length=200)\n    date = models.DateField()\n\n    def __str__(self):\n        return f\"{self.title} on {self.date}\"",
-      "out": "print(m)  →  'Reunion on 2027-01-15'",
+      "id": "c45",
+      "q": "Show ForeignKey — forward and reverse access.",
+      "code": "# Forward: meeting → room\nm = Meeting.objects.get(pk=1)\nprint(m.room.name)        # forward FK\n\n# Reverse: room → all its meetings\nr = Room.objects.get(pk=1)\nprint(r.meeting_set.all())  # reverse accessor",
+      "out": "m.room.name     → 'Conf A'\nr.meeting_set.all() → QuerySet of all Meetings in that room\n\nVerified: FK forward='Conf A', FK reverse count >= 2",
       "ans": null,
-      "why": "Without __str__, Django shows 'Meeting object (1)' everywhere — in admin, print(), templates. Must return a string. Returning an integer raises TypeError.",
-      "t": "dj.models",
-      "src": "ch3",
+      "why": "Forward access uses the field name. Reverse uses modelname_set by default, or the related_name you defined.",
+      "t": "dj.relations",
+      "src": "ch5",
+      "ls": 2,
+      "lab": 5
+    },
+    {
+      "id": "c46",
+      "q": "What does related_name do on a ForeignKey?",
+      "code": "class Meeting(models.Model):\n    room = models.ForeignKey(Room,\n        on_delete=models.CASCADE,\n        related_name='meetings')",
+      "out": "Without related_name: room.meeting_set.all()\nWith related_name='meetings': room.meetings.all()\n\nSame data, different accessor name.",
+      "ans": null,
+      "why": "related_name is also required when a model has two FKs to the same model — without it Django raises an accessor name clash error.",
+      "t": "dj.relations",
+      "src": "ch5",
+      "ls": 6,
+      "lab": 5
+    },
+    {
+      "id": "c47",
+      "q": "[Part 3 — Ex11] Complete models.py: Job has many Applications (from real exam).",
+      "code": "class Job(models.Model):\n    title = models.CharField(max_length=200)\n    description = models.TextField()\n\nclass Application(models.Model):\n    candidate_name = models.CharField(max_length=100)\n    job = models._____(1)_____(_____(2)_____,\n              on_delete=models._____(3)_____,\n              related_name=_____(4)_____)\n    status = models.CharField(max_length=10)\n    application_date = models.DateField(auto_now_add=True)",
+      "out": "(1) ForeignKey\n(2) Job\n(3) CASCADE\n(4) 'applications'\n\nResult: job.applications.all() returns all applications for that job.\nVerified: this is exactly the exam question pattern.",
+      "ans": null,
+      "why": "(1) ForeignKey = many-to-one. (2) Job = the parent model. (3) CASCADE = delete apps when job deleted. (4) related_name lets the exam template use job.applications.all() instead of job.application_set.all().",
+      "t": "dj.relations",
+      "src": "ch5",
+      "ls": 7,
+      "lab": 5
+    },
+    {
+      "id": "c48",
+      "q": "[Part 3 — Ex12] Complete Trip/Booking models with ForeignKey (exam correction).",
+      "code": "class Trip(models.Model):\n    driver = models.CharField(max_length=100)\n    destination = models.CharField(max_length=200)\n    departure_date = models.DateTimeField()\n    available_seats = models.IntegerField()\n\nclass Booking(models.Model):\n    passenger_name = models.CharField(max_length=100)\n    trip = models._____(1)_____(_____(2)_____,\n               on_delete=models._____(3)_____)\n    booking_date = models.DateField(auto_now_add=True)\n    seats_reserved = models.IntegerField()",
+      "out": "(1) ForeignKey\n(2) Trip\n(3) CASCADE\n\nFull solution from exam correction — verified running.",
+      "ans": null,
+      "why": "Booking belongs to Trip = one-to-many = ForeignKey on Booking. CASCADE: delete Bookings when Trip is deleted.",
+      "t": "dj.relations",
+      "src": "ch5",
+      "ls": 7,
+      "lab": 5
+    },
+    {
+      "id": "c49",
+      "q": "[Part 2] What is the role of {% csrf_token %} in a Django form?",
+      "code": null,
+      "out": null,
+      "ans": "It generates a hidden input with a secret token that Django verifies on form submission. This protects against CSRF (Cross-Site Request Forgery) attacks — where a malicious site tricks a logged-in user into submitting a form on your site. Without it, Django returns 403 Forbidden on POST. This was question 1 on the actual exam.",
+      "why": "Exam Q1 tested exactly this. Answer: {% csrf_token %}.",
+      "t": "dj.templates",
+      "src": "ch6",
       "ls": 4,
-      "lab": 3
+      "lab": 6
     },
     {
-      "id": "c33",
-      "q": "What is the difference between CharField and TextField?",
+      "id": "c50",
+      "q": "What is the difference between {% extends %} and {% include %}?",
       "code": null,
       "out": null,
-      "ans": "CharField: short text, REQUIRES max_length=N, stored as VARCHAR.\nTextField: long text, no max_length needed, stored as TEXT.\nUse CharField for names/titles/codes. Use TextField for descriptions/messages/body text.",
-      "why": "Forgetting max_length on CharField raises: SystemCheckError: CharField must define max_length.",
-      "t": "dj.models",
-      "src": "ch3",
-      "ls": 2,
-      "lab": 3
+      "ans": "{% extends 'base.html' %} = template inheritance. The child fills named blocks in the base layout. Must be the first line. Only one base per template.\n{% include 'navbar.html' %} = composition. Inserts a template fragment inline. No block system. Can use multiple includes.",
+      "why": "Classic confusion point. Inheritance = one base, fill holes. Include = paste a snippet.",
+      "t": "dj.templates",
+      "src": "ch6",
+      "ls": 5,
+      "lab": 6
     },
     {
-      "id": "c34",
-      "q": "What field type should you use for a price (e.g. 19.99)?",
+      "id": "c51",
+      "q": "What is the correct template syntax for each of these?",
       "code": null,
       "out": null,
-      "ans": "DecimalField(max_digits=6, decimal_places=2) — exact.\nNOT FloatField — floats have rounding errors (19.99 becomes 19.990000001). DecimalField is precise. max_digits = total digits. decimal_places = digits after the dot.\nFor 999.99: max_digits=5, decimal_places=2.",
-      "why": "Classic exam question. DecimalField is the correct answer for money/prices.",
-      "t": "dj.models",
-      "src": "ch3",
-      "ls": 2,
-      "lab": 3
-    },
-    {
-      "id": "c35",
-      "q": "[Part 3 — Ex7] Complete models.py for the Job application system (from real exam).",
-      "code": "from django.db import models\n\nclass Job(models.Model):\n    title = models._____(1)_____(max_length=200)\n    description = models._____(2)_____()  # long text\n\n    def __str__(self):\n        return self.title\n\nclass Application(models.Model):\n    candidate_name = models.CharField(max_length=100)\n    job = models._____(3)_____(_____(4)_____, on_delete=models._____(5)_____)\n    status = models.CharField(max_length=10)\n    application_date = models._____(6)_____(auto_now_add=True)\n\n    def __str__(self):\n        return f\"{self.candidate_name} - {self.job.title}\"",
-      "out": "(1) CharField\n(2) TextField\n(3) ForeignKey\n(4) Job\n(5) CASCADE\n(6) DateField\n\nFull solution — verified running:\nclass Job(models.Model):\n    title = models.CharField(max_length=200)\n    description = models.TextField()\n    def __str__(self): return self.title\n\nclass Application(models.Model):\n    candidate_name = models.CharField(max_length=100)\n    job = models.ForeignKey(Job, on_delete=models.CASCADE)\n    status = models.CharField(max_length=10)\n    application_date = models.DateField(auto_now_add=True)\n    def __str__(self): return f'{self.candidate_name} - {self.job.title}'",
-      "ans": null,
-      "why": "(1) CharField needs max_length. (2) TextField for long description. (3) ForeignKey = many-to-one. (4) Job = related model. (5) CASCADE = delete Applications when Job deleted. (6) DateField with auto_now_add sets date on creation automatically.",
-      "t": "dj.models",
-      "src": "ch3",
-      "ls": 7,
-      "lab": 3
-    },
-    {
-      "id": "c36",
-      "q": "[Part 3 — Ex8] Complete models.py for Trip/Booking (from exam correction).",
-      "code": "from django.db import models\n\nclass Trip(models.Model):\n    driver = models._____(1)_____(max_length=100)\n    destination = models._____(2)_____(max_length=200)\n    departure_date = models._____(3)_____()   # date AND time\n    available_seats = models._____(4)_____()  # whole number\n\nclass Booking(models.Model):\n    passenger_name = models.CharField(max_length=100)\n    trip = models._____(5)_____(Trip, on_delete=models.CASCADE)\n    booking_date = models.DateField(_____(6)_____=True)  # auto on create\n    seats_reserved = models.IntegerField()",
-      "out": "(1) CharField\n(2) CharField\n(3) DateTimeField\n(4) IntegerField\n(5) ForeignKey\n(6) auto_now_add\n\nVerified running — from exam correction document.",
-      "ans": null,
-      "why": "DateTimeField stores both date and time. IntegerField for whole numbers. auto_now_add=True sets date automatically — cannot be set manually after.",
-      "t": "dj.models",
-      "src": "ch3",
-      "ls": 7,
-      "lab": 3
-    },
-    {
-      "id": "c37",
-      "q": "[Part 3 — Ex9] Fill in the migration commands in the correct order.",
-      "code": "# You just added a 'location' field to Meeting.\n# Step 1: generate migration script\n$ python manage.py _____(1)_____\n\n# Step 2: apply to database\n$ python manage.py _____(2)_____\n\n# Check status\n$ python manage.py _____(3)_____ meetings\n\n# See the SQL\n$ python manage.py _____(4)_____ meetings 0002",
-      "out": "(1) makemigrations\n(2) migrate\n(3) showmigrations\n(4) sqlmigrate\n\nExpected showmigrations output:\nmeetings\n [X] 0001_initial\n [X] 0002_meeting_add_location",
-      "ans": null,
-      "why": "makemigrations generates, migrate applies. showmigrations checks status. sqlmigrate inspects the SQL. Always makemigrations THEN migrate — never reversed.",
-      "t": "dj.migrations",
-      "src": "ch3",
-      "ls": 6,
-      "lab": 3
-    },
-    {
-      "id": "c38",
-      "q": "[Part 2] What is Django Admin? What can you do with it?",
-      "code": null,
-      "out": null,
-      "ans": "Django Admin is a built-in web interface for managing your app's data — full CRUD (create, read, update, delete) for any registered model, auto-generated from your models. Access at /admin/ after creating a superuser. Use for: data management during development, back-office tasks for staff, quick debugging. NOT for end-users.",
-      "why": "Exam Part 2 often asks to describe the admin or explain the two parts of a web app (front-end for users, admin for staff).",
-      "t": "dj.admin",
-      "src": "ch4",
+      "ans": "Display variable: {{ meeting.title }}\nFor loop: {% for m in meetings %}...{% endfor %}\nEmpty fallback: {% empty %} inside a for loop\nIf condition: {% if x > 0 %}...{% endif %}\nURL tag: {% url 'detail' meeting.id %}\nCSRF protection: {% csrf_token %}\nLoad static: {% load static %} then {% static 'file.css' %}\nSingle comment: {# comment #}\nBlock comment: {% comment %}...{% endcomment %}",
+      "why": "Exam Part 3 Q4 always asks to complete a template. Know all these tags by heart.",
+      "t": "dj.templates",
+      "src": "ch6",
       "ls": 1,
-      "lab": 4
+      "lab": 6
     },
     {
-      "id": "c39",
-      "q": "What is the minimum code to make Meeting appear in the Admin?",
-      "code": "# meetings/admin.py\nfrom django.contrib import admin\nfrom .models import Meeting\n\nadmin.site.register(Meeting)",
-      "out": "Meeting appears at /admin/meetings/meeting/\nVerified: admin.site.is_registered(Meeting) = True",
+      "id": "c52",
+      "q": "[Part 3 — Ex13] Complete this template to list jobs with a fallback message.",
+      "code": "{% _____(1)_____ \"base.html\" %}\n{% block content %}\n<h1>Job List</h1>\n<ul>\n  _____(2)_____ job in jobs _____\n    <li>{{ job._____(3)_____ }}</li>\n  _____(4)_____\n    <li>No jobs available.</li>\n  _____(5)_____\n</ul>\n{% endblock %}",
+      "out": "(1) extends\n(2) {% for\n(3) title\n(4) {% empty %}\n(5) {% endfor %}\n\nFull solution:\n{% extends \"base.html\" %}\n{% block content %}\n<h1>Job List</h1>\n<ul>\n  {% for job in jobs %}\n    <li>{{ job.title }}</li>\n  {% empty %}\n    <li>No jobs available.</li>\n  {% endfor %}\n</ul>\n{% endblock %}\n\nVerified: for/empty renders correctly.",
       "ans": null,
-      "why": "admin.site.register(Model) is all you need. Without it, the model is invisible in admin — no error, just silently missing.",
-      "t": "dj.admin",
-      "src": "ch4",
+      "why": "Exact pattern from exam Part 3 Q4 (Job/Application exam). extends must be line 1. {% empty %} handles zero items.",
+      "t": "dj.templates",
+      "src": "ch6",
       "ls": 2,
-      "lab": 4
+      "lab": 6
     },
     {
-      "id": "c40",
-      "q": "What is the correct order to get the Admin panel working on a fresh project?",
-      "code": null,
-      "out": null,
-      "ans": "1. python manage.py migrate        (creates auth_user table)\n2. python manage.py createsuperuser (creates admin account)\n3. Register models in admin.py\n4. python manage.py runserver\n5. Visit http://127.0.0.1:8000/admin/\n\nTrap: running createsuperuser before migrate gives 'no such table: auth_user'.",
-      "why": "The order matters. migrate must come first. This is a classic exam procedure question.",
-      "t": "dj.admin",
-      "src": "ch4",
-      "ls": 3,
-      "lab": 4
-    },
-    {
-      "id": "c41",
-      "q": "[Part 3 — Ex10] Complete admin.py to register Meeting and Room.",
-      "code": "# meetings/admin.py\nfrom django.contrib import _____(1)_____\nfrom ._____(2)_____ import Meeting, Room\n\n_____(3)_____.site.register(_____(4)_____)\n_____(3)_____.site.register(_____(5)_____)",
-      "out": "(1) admin\n(2) models\n(3) admin\n(4) Meeting\n(5) Room\n\nFull solution:\nfrom django.contrib import admin\nfrom .models import Meeting, Room\n\nadmin.site.register(Meeting)\nadmin.site.register(Room)\n\nVerified: admin.site.is_registered(Meeting) = True, admin.site.is_registered(Room) = True",
+      "id": "c53",
+      "q": "[Part 3 — Ex14] Complete this template for a job_list CBV (from exam).",
+      "code": "<!DOCTYPE html>\n<html lang=\"fr\">\n<h1>Liste des Offres d'Emploi</h1>\n<ul>\n  _____(1)_____ job in _____(2)_____ _____\n  <li>\n    <p>{{ _____(3)_____ }}</p>\n    <p>{{ _____(4)_____ }}</p>\n  </li>\n  {_____(5)_____}\n  <p>Aucun poste disponible.</p>\n  {_____(6)_____}\n</ul>",
+      "out": "(1) {% for\n(2) jobs  (the context_object_name from JobListView)\n(3) job.title\n(4) job.description\n(5) % empty %}\n(6) % endfor %}\n\nNote: context_object_name='jobs' in the CBV means the template variable is 'jobs'.\nVerified: this is exactly the exam question.",
       "ans": null,
-      "why": "Import admin from django.contrib. Import models with relative import (.models). register() takes the model class — not a string.",
-      "t": "dj.admin",
-      "src": "ch4",
+      "why": "When using ListView with context_object_name='jobs', the template loop uses 'jobs'. If context_object_name is not set, it defaults to 'job_list'.",
+      "t": "dj.templates",
+      "src": "ch6",
       "ls": 2,
-      "lab": 4
+      "lab": 6
+    },
+    {
+      "id": "c54",
+      "q": "What is the most useful forloop variable inside {% for %}?",
+      "code": "{% for meeting in meetings %}\n  <li>{{ forloop.counter }}. {{ meeting.title }}</li>\n{% endfor %}",
+      "out": "1. Seance 01\n2. Seance 02\n3. Seance 03",
+      "ans": null,
+      "why": "forloop.counter = 1-based position. forloop.counter0 = 0-based. forloop.first = True on first iteration. forloop.last = True on last. These are available inside any {% for %} block.",
+      "t": "dj.templates",
+      "src": "ch6",
+      "ls": 2,
+      "lab": 6
     }
   ],
   "mcq": [
@@ -1663,277 +1660,238 @@
       "why": "<code>@admin.register(Model)</code> is a decorator shortcut. Equivalent to <code>admin.site.register(Meeting, MeetingAdmin)</code> — just more concise."
     },
     {
-      "id": "q16",
-      "t": "dj.models",
-      "q": "Which field type is correct for a product price like 19.99?",
+      "id": "q37",
+      "t": "dj.relations",
+      "q": "Which field type do you use when many Applications belong to one Job?",
       "code": null,
-      "ok": "models.DecimalField(max_digits=4, decimal_places=2)",
+      "ok": "models.ForeignKey(Job, on_delete=models.CASCADE)",
       "bad": [
-        "models.FloatField()",
-        "models.IntegerField()",
-        "models.CharField(max_length=5)"
+        "models.OneToOneField(Job, on_delete=models.CASCADE)",
+        "models.ManyToManyField(Job)",
+        "models.IntegerField()"
       ],
-      "why": "<b>DecimalField</b> is exact — 19.99 stays 19.99. <code>FloatField</code> has rounding errors (19.99 may become 19.990000001). <code>IntegerField</code> can't store decimals. <code>CharField</code> stores text."
+      "why": "Many-to-one relationship = <b>ForeignKey</b>. <code>OneToOneField</code> is for exactly one-to-one. <code>ManyToManyField</code> is for many-to-many. <code>IntegerField</code> stores numbers, not relationships."
     },
     {
-      "id": "q17",
-      "t": "dj.models",
-      "q": "What happens if you define a CharField without max_length?",
-      "code": "class Product(models.Model):\n    name = models.CharField()",
-      "ok": "Django raises a system check error: CharField must define max_length",
-      "bad": [
-        "Django uses max_length=255 by default",
-        "Django uses max_length=100 by default",
-        "It works fine with unlimited length"
-      ],
-      "why": "<code>max_length</code> is required for <code>CharField</code>. Django system checks catch this before the server starts. Use <code>TextField()</code> if you need unlimited length."
-    },
-    {
-      "id": "q18",
-      "t": "dj.migrations",
-      "q": "You added a new field to a model. Which command creates the migration script?",
+      "id": "q38",
+      "t": "dj.relations",
+      "q": "What does on_delete=models.CASCADE do when a Room is deleted?",
       "code": null,
-      "ok": "python manage.py makemigrations",
+      "ok": "All Meetings linked to that Room are automatically deleted",
       "bad": [
-        "python manage.py migrate",
-        "python manage.py startmigration",
-        "python manage.py createmigration"
+        "The room field on Meetings is set to NULL",
+        "Django raises an error and prevents deletion",
+        "Meetings are kept and their room field is left unchanged"
       ],
-      "why": "<code>makemigrations</code> generates the migration script. <code>migrate</code> applies it. <code>startmigration</code> and <code>createmigration</code> do not exist. Remember: make first, then migrate."
+      "why": "<code>CASCADE</code> propagates the delete to all children. Room deleted → all its Meetings deleted. Use <code>SET_NULL</code> (with <code>null=True</code>) to keep Meetings but clear their room field. Verified: <code>Meeting.objects.get(pk=m.pk)</code> raises <code>DoesNotExist</code> after room is deleted."
     },
     {
-      "id": "q19",
-      "t": "dj.migrations",
-      "q": "Which command applies pending migrations to the database?",
+      "id": "q39",
+      "t": "dj.relations",
+      "q": "You want to delete a Room only if it has no Meetings. Which on_delete option do you use?",
       "code": null,
-      "ok": "python manage.py migrate",
+      "ok": "models.PROTECT",
       "bad": [
-        "python manage.py makemigrations",
-        "python manage.py runmigrations",
-        "python manage.py applymigrations"
+        "models.CASCADE",
+        "models.SET_NULL",
+        "models.DO_NOTHING"
       ],
-      "why": "<code>migrate</code> applies the scripts to the actual database. <code>makemigrations</code> only generates the scripts. <code>runmigrations</code> and <code>applymigrations</code> do not exist. Tested in the exam correction."
+      "why": "<code>PROTECT</code> raises <code>ProtectedError</code> when you try to delete a parent that still has children. This prevents accidental data loss. <code>CASCADE</code> would delete the children. <code>SET_NULL</code> would orphan them."
     },
     {
-      "id": "q20",
-      "t": "dj.migrations",
-      "q": "What does python manage.py showmigrations display?",
+      "id": "q40",
+      "t": "dj.relations",
+      "q": "How do you access all Meetings for a given Room (reverse FK access)?",
+      "code": "r = Room.objects.get(pk=1)",
+      "ok": "r.meeting_set.all()",
+      "bad": [
+        "r.meetings()",
+        "Meeting.objects.filter(Room=r)",
+        "r.get_meetings()"
+      ],
+      "why": "Django automatically creates a reverse accessor named <code>modelname_set</code>. For Room→Meeting: <code>r.meeting_set.all()</code>. You can rename it with <code>related_name='meetings'</code> → then <code>r.meetings.all()</code>. <code>Meeting.objects.filter(room=r)</code> also works but uses lowercase <code>room</code>."
+    },
+    {
+      "id": "q41",
+      "t": "dj.relations",
+      "q": "What is required when you use on_delete=models.SET_NULL?",
+      "code": "room = models.ForeignKey(Room, on_delete=models.SET_NULL)",
+      "ok": "null=True must also be set on the field",
+      "bad": [
+        "Nothing extra is needed",
+        "blank=True must also be set",
+        "The Room model must have a nullable primary key"
+      ],
+      "why": "If the FK is set to NULL, the database column must allow NULL. <code>SET_NULL</code> without <code>null=True</code> causes an <code>IntegrityError</code>. Fix: <code>room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True)</code>."
+    },
+    {
+      "id": "q42",
+      "t": "dj.relations",
+      "q": "Which relation type does Django use for the User ↔ Profile relationship (one user = one profile)?",
       "code": null,
-      "ok": "A list of all migrations with [X] for applied and [ ] for pending",
+      "ok": "OneToOneField",
       "bad": [
-        "Only the SQL that will be run",
-        "Only the pending migrations",
-        "The list of installed apps"
+        "ForeignKey",
+        "ManyToManyField",
+        "PrimaryKeyField"
       ],
-      "why": "<code>showmigrations</code> lists ALL migrations for every app. <code>[X]</code> = applied, <code>[ ]</code> = pending. <code>sqlmigrate</code> shows SQL for a specific migration."
+      "why": "<code>OneToOneField</code> enforces that each User has at most one Profile. <code>ForeignKey</code> would allow many Profiles per User. <code>ManyToManyField</code> is for many-to-many. <code>PrimaryKeyField</code> doesn't exist."
     },
     {
-      "id": "q21",
-      "t": "dj.migrations",
-      "q": "What does python manage.py sqlmigrate meetings 0001 do?",
+      "id": "q43",
+      "t": "dj.relations",
+      "q": "What does Django automatically create for a ManyToManyField?",
+      "code": "class Student(models.Model):\n    courses = models.ManyToManyField(Course)",
+      "ok": "An intermediate join table (e.g. student_courses) in the database",
+      "bad": [
+        "A new column in the Student table",
+        "A new column in the Course table",
+        "Nothing — you must create the join table manually"
+      ],
+      "why": "Django automatically creates a <b>join table</b> (e.g. <code>appname_student_courses</code>) with two foreign key columns — one for Student, one for Course. You never define this table yourself."
+    },
+    {
+      "id": "q44",
+      "t": "dj.relations",
+      "q": "In which file do you define a ForeignKey relationship between two models?",
       "code": null,
-      "ok": "Prints the SQL for migration 0001 without running it",
+      "ok": "models.py — on the model that is on the 'many' side",
       "bad": [
-        "Applies migration 0001 to the database",
-        "Creates the migration script 0001",
-        "Reverts migration 0001"
+        "urls.py",
+        "admin.py — on the parent model",
+        "settings.py — in the DATABASES config"
       ],
-      "why": "<code>sqlmigrate</code> is a read-only inspection tool. It shows the SQL Django would generate — without modifying the database. Useful for understanding and debugging schema changes."
+      "why": "Relations are defined in <code>models.py</code>. The ForeignKey is placed on the <i>many</i> side — the model that belongs to another. Example: Application has FK to Job (many Applications → one Job)."
     },
     {
-      "id": "q22",
-      "t": "dj.models",
-      "q": "What is the difference between null=True and blank=True?",
+      "id": "q45",
+      "t": "dj.relations",
+      "q": "What does on_delete=models.CASCADE mean in this model?",
+      "code": "class Application(models.Model):\n    job = models.ForeignKey(Job, on_delete=models.CASCADE)",
+      "ok": "If a Job is deleted, all its Applications are deleted too",
+      "bad": [
+        "If an Application is deleted, its Job is deleted too",
+        "Applications cannot be deleted",
+        "Jobs cannot be deleted while Applications exist"
+      ],
+      "why": "CASCADE applies to the <i>parent</i> being deleted. Here Job is the parent. Deleting a Job cascades down to its Applications. The Application itself can still be deleted independently."
+    },
+    {
+      "id": "q46",
+      "t": "dj.relations",
+      "q": "What is the reverse accessor name for this relationship?",
+      "code": "class BookPost(models.Model):\n    author = models.ForeignKey(Author, on_delete=models.CASCADE)",
+      "ok": "author.bookpost_set.all()",
+      "bad": [
+        "author.posts.all()",
+        "author.bookpost.all()",
+        "BookPost.objects.filter(Author=author)"
+      ],
+      "why": "Default reverse accessor = <code>modelname_set</code> (all lowercase). Model <code>BookPost</code> → accessor <code>bookpost_set</code>. Set <code>related_name='posts'</code> to get <code>author.posts.all()</code> instead. Note: <code>filter(Author=author)</code> uses uppercase — wrong. Use <code>filter(author=author)</code>."
+    },
+    {
+      "id": "q47",
+      "t": "dj.templates",
+      "q": "Which template tag protects a form against CSRF attacks?",
+      "code": "<form method=\"post\">\n  ___ ? ___\n  {{ form.as_p }}\n  <button type=\"submit\">Save</button>\n</form>",
+      "ok": "{% csrf_token %}",
+      "bad": [
+        "{% csrf_protect %}",
+        "{% csrf_include %}",
+        "{% csrf-token %}"
+      ],
+      "why": "<code>{% csrf_token %}</code> generates a hidden input with a secret token. Django checks this token on every POST. Without it: 403 Forbidden. This was <b>question 1 on the actual exam</b>."
+    },
+    {
+      "id": "q48",
+      "t": "dj.templates",
+      "q": "What is the correct syntax to display a template variable?",
       "code": null,
-      "ok": "null=True allows NULL in the database; blank=True allows empty value in forms",
+      "ok": "{{ variable }}",
       "bad": [
-        "They are identical — both make the field optional",
-        "null=True is for forms; blank=True is for the database",
-        "null=True only works on IntegerField"
+        "<%= variable %>",
+        "{% variable %}",
+        "<% variable %>"
       ],
-      "why": "<code>null=True</code> = database-level (column can store NULL). <code>blank=True</code> = form-validation-level (field can be submitted empty). Independent settings. For text fields, prefer <code>blank=True</code> without <code>null=True</code>."
+      "why": "Django uses <code>{{ }}</code> for output and <code>{% %}</code> for logic. <code>&lt;%= %&gt;</code> is ERB (Ruby). <code>&lt;% %&gt;</code> is PHP/ASP. <code>{% variable %}</code> would try to execute 'variable' as a tag — which doesn't exist."
     },
     {
-      "id": "q23",
-      "t": "dj.models",
-      "q": "What does __str__ on a model control?",
-      "code": "class Room(models.Model):\n    name = models.CharField(max_length=50)\n    room_number = models.IntegerField()\n\n    def __str__(self):\n        return f\"{self.name}: room {self.room_number}\"",
-      "ok": "How the object is displayed as text — in admin, print(), and templates",
+      "id": "q49",
+      "t": "dj.templates",
+      "q": "What happens when you use {% static 'style.css' %} without {% load static %}?",
+      "code": null,
+      "ok": "TemplateSyntaxError: Invalid block tag 'static'",
       "bad": [
-        "It is the primary key of the model",
-        "It is called automatically when the model is saved",
-        "It defines a string column in the database"
-      ],
-      "why": "Without <code>__str__</code>: <code>Room object (1)</code>. With it: <code>Salle A: room 201</code>. Called whenever Python needs a string: <code>print()</code>, admin list view, <code>{{ room }}</code> in templates. Verified output: <code>Salle A: room 201 on floor 2</code>."
-    },
-    {
-      "id": "q24",
-      "t": "dj.models",
-      "q": "You edit models.py but don't run any management commands. What happens when you query the new field?",
-      "code": "# Added location to Meeting — no makemigrations/migrate\nMeeting.objects.filter(location='Room 101')",
-      "ok": "OperationalError: no such column: meetings_meeting.location",
-      "bad": [
-        "Django auto-detects the change and updates the table",
-        "The field returns None silently",
+        "Django uses a default static path",
+        "The tag is silently ignored",
         "Django raises ImproperlyConfigured"
       ],
-      "why": "Editing <code>models.py</code> does NOT change the database. You must run <code>makemigrations</code> then <code>migrate</code>. Without them, the column doesn't exist. This is the most common Django beginner mistake."
+      "why": "<code>{% load static %}</code> must appear before any <code>{% static %}</code> use. Without it, Django doesn't know the <code>static</code> tag and raises <code>TemplateSyntaxError</code>. Verified output: <code>/static/style.css</code> when loaded correctly."
     },
     {
-      "id": "q25",
-      "t": "dj.models",
-      "q": "Which field stores a date AND time (e.g. '2027-01-15 09:30:00')?",
+      "id": "q50",
+      "t": "dj.templates",
+      "q": "What does {% empty %} do inside a {% for %} loop?",
+      "code": "{% for item in items %}\n  <li>{{ item }}</li>\n{% empty %}\n  <li>Nothing here.</li>\n{% endfor %}",
+      "ok": "Renders the empty block when the list has zero items",
+      "bad": [
+        "Clears the list before the loop",
+        "Renders on the last iteration",
+        "Raises an error if the list is empty"
+      ],
+      "why": "<code>{% empty %}</code> is a convenience shortcut inside <code>{% for %}</code>. When the iterable is empty, Django renders the <code>{% empty %}</code> block instead of the loop body. Verified: <code>{% for %}{% empty %}{% endfor %}</code> with <code>[]</code> → 'Nothing here.'"
+    },
+    {
+      "id": "q51",
+      "t": "dj.templates",
+      "q": "Which Django template filter shows 'N/A' when a variable is empty or missing?",
+      "code": "{{ job.salary|_____:'N/A' }}",
+      "ok": "default",
+      "bad": [
+        "fallback",
+        "or",
+        "empty"
+      ],
+      "why": "<code>{{ value|default:'N/A' }}</code> returns the default string when <code>value</code> is falsy (empty string, None, 0, []). <code>fallback</code>, <code>or</code>, and <code>empty</code> are not Django filters."
+    },
+    {
+      "id": "q52",
+      "t": "dj.templates",
+      "q": "What is the correct way to comment a block of template code?",
       "code": null,
-      "ok": "models.DateTimeField()",
+      "ok": "{% comment %} ... {% endcomment %}",
       "bad": [
-        "models.DateField()",
-        "models.TimeField()",
-        "models.DateAndTimeField()"
+        "<!-- comment -->",
+        "{# single line only works for blocks #}",
+        "<% comment %>"
       ],
-      "why": "<code>DateField</code> = date only. <code>TimeField</code> = time only. <code>DateTimeField</code> = both. <code>DateAndTimeField</code> does not exist in Django."
+      "why": "<code>{% comment %}...{% endcomment %}</code> for multi-line. <code>{# ... #}</code> for single-line. HTML comments <code>&lt;!-- --&gt;</code> are NOT Django comments — the template engine still evaluates them. This was <b>exam Q12</b>."
     },
     {
-      "id": "q26",
-      "t": "dj.models",
-      "q": "What does auto_now_add=True do on a DateField?",
-      "code": "application_date = models.DateField(auto_now_add=True)",
-      "ok": "Sets the date to today when the object is created; cannot be changed later",
-      "bad": [
-        "Sets the date to today every time the object is saved",
-        "Makes the field optional with default=today",
-        "Adds a timezone-aware datetime automatically"
-      ],
-      "why": "<code>auto_now_add=True</code> = set once at creation, then read-only. <code>auto_now=True</code> = update on every save. With <code>auto_now_add</code>, the field is excluded from forms — you cannot set it manually."
-    },
-    {
-      "id": "q27",
-      "t": "dj.migrations",
-      "q": "In which order must you run commands after adding a field to a model?",
+      "id": "q53",
+      "t": "dj.templates",
+      "q": "What must be true about {% extends %} in a child template?",
       "code": null,
-      "ok": "makemigrations then migrate",
+      "ok": "It must be the very first line of the template",
       "bad": [
-        "migrate then makemigrations",
-        "migrate only (makemigrations is optional)",
-        "makemigrations only (migrate is optional)"
+        "It can appear anywhere before the first {% block %}",
+        "It must be inside a {% block %}",
+        "It is optional — you can use {% include %} instead"
       ],
-      "why": "<code>makemigrations</code> generates the script. <code>migrate</code> runs it. Both are required, always in this order. Running <code>migrate</code> first when no script exists does nothing. Skipping <code>migrate</code> means the database is never updated."
+      "why": "<code>{% extends %}</code> must be the <b>first token</b> in the template. Any content before it (even whitespace or DOCTYPE) is silently discarded. The whole inheritance mechanism depends on this."
     },
     {
-      "id": "q28",
-      "t": "dj.models",
-      "q": "What is the generated database table name for this model?",
-      "code": "# In app 'meetings'\nclass Room(models.Model):\n    name = models.CharField(max_length=50)",
-      "ok": "meetings_room",
+      "id": "q54",
+      "t": "dj.templates",
+      "q": "What does {% url 'detail' meeting.id %} generate?",
+      "code": "# urls.py:\npath('meetings/<int:pk>/', views.detail, name='detail')",
+      "ok": "/meetings/5/  (when meeting.id = 5)",
       "bad": [
-        "room",
-        "Room",
-        "meetings_Room"
+        "detail?id=5",
+        "meetings/detail/5",
+        "It raises NoReverseMatch if meeting.id is not in the URL"
       ],
-      "why": "Django generates table names as <code>appname_modelname</code>, all lowercase. App <code>meetings</code> + model <code>Room</code> = table <code>meetings_room</code>. Verified via <code>sqlmigrate</code>: <code>CREATE TABLE \"meetings_room\"</code>."
-    },
-    {
-      "id": "q29",
-      "t": "dj.models",
-      "q": "In Django ORM: class / attribute / instance maps to what in the database?",
-      "code": null,
-      "ok": "class=table, attribute=column, instance=row",
-      "bad": [
-        "class=column, attribute=table, instance=row",
-        "class=row, attribute=column, instance=table",
-        "class=table, attribute=row, instance=column"
-      ],
-      "why": "Class = table definition. Attribute = column. Instance (object) = row. This is the core ORM mapping — appears in exam Part 2 written answers."
-    },
-    {
-      "id": "q30",
-      "t": "dj.models",
-      "q": "Which field would you use for a user biography (long text, no fixed limit)?",
-      "code": null,
-      "ok": "models.TextField()",
-      "bad": [
-        "models.CharField(max_length=5000)",
-        "models.LongTextField()",
-        "models.CharField()"
-      ],
-      "why": "<code>TextField()</code> is designed for unlimited-length text — stored as TEXT in the database. <code>CharField</code> requires <code>max_length</code> and is VARCHAR. <code>LongTextField</code> does not exist in Django."
-    },
-    {
-      "id": "q31",
-      "t": "dj.models",
-      "q": "What is wrong with this __str__ method?",
-      "code": "def __str__(self):\n    return self.duration  # duration is IntegerField",
-      "ok": "TypeError — __str__ must return a string, not an integer",
-      "bad": [
-        "Nothing is wrong",
-        "AttributeError — duration doesn't exist",
-        "It returns '0' by default"
-      ],
-      "why": "<code>__str__</code> must return a <b>string</b>. <code>self.duration</code> is an integer. Fix: <code>return str(self.duration)</code> or <code>return f\"{self.title} ({self.duration}h)\"</code>."
-    },
-    {
-      "id": "q32",
-      "t": "dj.admin",
-      "q": "What is the minimum code to make a model appear in the Django Admin?",
-      "code": null,
-      "ok": "admin.site.register(MyModel) in admin.py",
-      "bad": [
-        "Add the model to INSTALLED_APPS",
-        "Create a ModelAdmin class",
-        "Add the model to urls.py"
-      ],
-      "why": "<code>admin.site.register(MyModel)</code> in <code>admin.py</code> is all you need. INSTALLED_APPS needs <code>'django.contrib.admin'</code> (already there by default) but not the model. <code>ModelAdmin</code> is optional — it only customises the display."
-    },
-    {
-      "id": "q33",
-      "t": "dj.admin",
-      "q": "What is the correct method to register a model in the admin?",
-      "code": null,
-      "ok": "admin.site.register(MyModel)",
-      "bad": [
-        "admin.register(MyModel)",
-        "MyModel.register(admin.site)",
-        "admin.site.add(MyModel)"
-      ],
-      "why": "The correct method is <code>admin.site.register(MyModel)</code>. <code>admin.register(MyModel)</code> without <code>site</code> doesn't exist as a standalone function. This was explicitly in the exam correction Part 1."
-    },
-    {
-      "id": "q34",
-      "t": "dj.admin",
-      "q": "You run createsuperuser but get 'no such table: auth_user'. What did you forget?",
-      "code": null,
-      "ok": "Running python manage.py migrate first",
-      "bad": [
-        "Installing django.contrib.auth in INSTALLED_APPS",
-        "Creating an admin.py file",
-        "Running startapp accounts first"
-      ],
-      "why": "<code>createsuperuser</code> needs the <code>auth_user</code> table, which is created by <code>migrate</code>. Always run <code>migrate</code> before <code>createsuperuser</code>. <code>django.contrib.auth</code> is in <code>INSTALLED_APPS</code> by default."
-    },
-    {
-      "id": "q35",
-      "t": "dj.admin",
-      "q": "Without __str__ on a model, how are objects shown in the Admin list view?",
-      "code": null,
-      "ok": "As 'Meeting object (1)', 'Meeting object (2)', etc.",
-      "bad": [
-        "By their primary key only: '1', '2', '3'",
-        "Django raises an error",
-        "By their first field value automatically"
-      ],
-      "why": "Without <code>__str__</code>, Python uses the default: <code>ClassName object (pk)</code>. The admin displays this literally — useless for humans. Always define <code>__str__</code> on every model."
-    },
-    {
-      "id": "q36",
-      "t": "dj.admin",
-      "q": "What does @admin.register(Meeting) do?",
-      "code": "@admin.register(Meeting)\nclass MeetingAdmin(admin.ModelAdmin):\n    list_display = ['title', 'date']",
-      "ok": "Registers Meeting with MeetingAdmin — equivalent to admin.site.register(Meeting, MeetingAdmin)",
-      "bad": [
-        "Creates a new Meeting model in the admin database",
-        "Adds Meeting to INSTALLED_APPS",
-        "It is invalid syntax in Django"
-      ],
-      "why": "<code>@admin.register(Model)</code> is a decorator shortcut. Equivalent to <code>admin.site.register(Meeting, MeetingAdmin)</code> — just more concise."
+      "why": "<code>{% url 'name' arg %}</code> calls Django's reverse() to build the URL from the named pattern. It generates <code>/meetings/5/</code>. If the name doesn't exist → <code>NoReverseMatch</code>. Verified: <code>reverse('detail', args=[5])</code> → <code>/meetings/5/</code>."
     }
   ],
   "topics": {
@@ -3606,17 +3564,17 @@
       ]
     },
     {
-      "id": "dj6",
-      "ch": "ch3",
-      "t": "dj.models",
-      "title": "Models — from Python class to database table",
+      "id": "dj11",
+      "ch": "ch5",
+      "t": "dj.relations",
+      "title": "Three relation types — which one to use?",
       "steps": [
         {
-          "say": "A model is just a Python class. Django reads it and creates a database table automatically. Let's trace the mapping from code to database.",
+          "say": "Django has three ways to relate models. The choice depends on how many objects relate to how many others on each side.",
           "add": [
             [
               "h",
-              "Class to Table — the ORM mapping"
+              "Three relation types at a glance"
             ],
             [
               "dia",
@@ -3629,114 +3587,70 @@
                     80,
                     10,
                     200,
-                    46,
-                    "Python models.py",
+                    44,
+                    "ForeignKey",
                     "blue",
-                    "what you write"
-                  ],
-                  [
-                    "arrow",
-                    180,
-                    58,
-                    180,
-                    100,
-                    "green"
+                    "many-to-one"
                   ],
                   [
                     "text",
-                    192,
-                    76,
-                    "Django ORM",
+                    80,
+                    60,
+                    "Many Meetings → one Room",
+                    "blue",
+                    13
+                  ],
+                  [
+                    "box",
+                    80,
+                    90,
+                    200,
+                    44,
+                    "OneToOneField",
+                    "green",
+                    "one-to-one"
+                  ],
+                  [
+                    "text",
+                    80,
+                    140,
+                    "One User → one Profile",
                     "green",
                     13
                   ],
                   [
                     "box",
                     80,
-                    102,
+                    170,
                     200,
-                    46,
-                    "SQL database",
+                    44,
+                    "ManyToManyField",
                     "orange",
-                    "what gets created"
+                    "many-to-many"
                   ],
                   [
-                    "box",
-                    10,
-                    190,
-                    100,
-                    44,
-                    "class Room",
-                    "blue",
-                    "→ table"
+                    "text",
+                    80,
+                    220,
+                    "Many Students ↔ Courses",
+                    "orange",
+                    13
                   ],
                   [
-                    "box",
-                    130,
-                    190,
-                    100,
-                    44,
-                    "name = ...",
-                    "blue",
-                    "→ column"
-                  ],
-                  [
-                    "box",
+                    "text",
+                    80,
                     250,
-                    190,
-                    100,
-                    44,
-                    "Room()",
-                    "blue",
-                    "→ row"
-                  ],
-                  [
-                    "arrow",
-                    60,
-                    236,
-                    60,
-                    268,
-                    "orange"
-                  ],
-                  [
-                    "arrow",
-                    180,
-                    236,
-                    180,
-                    268,
-                    "orange"
-                  ],
-                  [
-                    "arrow",
-                    300,
-                    236,
-                    300,
-                    268,
-                    "orange"
+                    "Django creates join table",
+                    "muted",
+                    12
                   ],
                   [
                     "text",
-                    10,
-                    276,
-                    "table",
-                    "orange",
-                    13
-                  ],
-                  [
-                    "text",
-                    130,
-                    276,
-                    "column",
-                    "orange",
-                    13
-                  ],
-                  [
-                    "text",
-                    250,
-                    276,
-                    "row",
-                    "orange",
-                    13
+                    80,
+                    268,
+                    "automatically for M2M",
+                    "muted",
+                    12
                   ]
                 ]
               }
@@ -3744,105 +3658,59 @@
           ]
         },
         {
-          "say": "Here are the professor's exact models for the Meeting Planner. Notice each field type and default value.",
+          "say": "ForeignKey is by far the most common and the one that appears on every exam. Here is the professor's exact Meeting/Room code.",
           "add": [
             [
               "h",
-              "Professor's Room model"
+              "ForeignKey — professor's code"
             ],
             [
               "code",
-              "from django.db import models\nfrom datetime import time\n\nclass Room(models.Model):\n    name = models.CharField(max_length=50)\n    floor = models.IntegerField()\n    room_number = models.IntegerField()\n\n    def __str__(self):\n        return f\"{self.name}: room {self.room_number} on floor {self.floor}\"",
+              "class Meeting(models.Model):\n    title = models.CharField(max_length=200)\n    date = models.DateField()\n    start_time = models.TimeField(default=time(9))\n    duration = models.IntegerField(default=1)\n    room = models.ForeignKey(Room, on_delete=models.CASCADE)\n\n    def __str__(self):\n        return f\"{self.title} at {self.start_time} on {self.date}\"",
               {
-                "8": "← always define __str__!"
+                "5": "← on_delete is REQUIRED",
+                "5b": "← CASCADE = delete meetings when room deleted"
               }
             ],
             [
-              "run",
-              "r = Room(name='Salle A', floor=2, room_number=201)\nprint(str(r))",
-              "Salle A: room 201 on floor 2",
-              "class Room:\n    def __init__(self, name, floor, room_number):\n        self.name=name; self.floor=floor; self.room_number=room_number\n    def __str__(self):\n        return f'{self.name}: room {self.room_number} on floor {self.floor}'"
+              "w",
+              "{b:Forward:} meeting.room.name → 'Conf A'"
+            ],
+            [
+              "w",
+              "{b:Reverse:} room.meeting_set.all() → all meetings in that room"
             ]
           ]
         },
         {
-          "say": "Here are the most important field types. The table name is always appname_modelname, all lowercase.",
+          "say": "Here is how the three relation types look in real code, all in one place for comparison.",
           "add": [
             [
               "h",
-              "Common field types at a glance"
+              "All three in code"
             ],
             [
-              "w",
-              "{b:CharField(max_length=N)} — short text. {r:max_length required!}"
-            ],
-            [
-              "w",
-              "{b:TextField()} — long text, no max_length needed"
-            ],
-            [
-              "w",
-              "{b:IntegerField()} — whole numbers"
-            ],
-            [
-              "w",
-              "{b:DecimalField(max_digits, decimal_places)} — exact decimals (prices)"
-            ],
-            [
-              "w",
-              "{b:DateField()} — date only  |  {b:DateTimeField()} — date + time"
-            ],
-            [
-              "w",
-              "{b:TimeField()} — time only  |  {b:EmailField()} — validated email"
+              "code",
+              "# ForeignKey — many Meetings per Room\nclass Meeting(models.Model):\n    room = models.ForeignKey(Room, on_delete=models.CASCADE)\n\n# OneToOneField — one Profile per User\nclass Profile(models.Model):\n    user = models.OneToOneField(User, on_delete=models.CASCADE)\n    bio = models.TextField()\n\n# ManyToManyField — many Students per Course, many Courses per Student\nclass Student(models.Model):\n    courses = models.ManyToManyField(Course)",
+              {}
             ],
             [
               "sticky",
-              "Table name = appname_modelname (lowercase)\nmeetings.Room → meetings_room\nVerified via sqlmigrate: CREATE TABLE meetings_room",
+              "FK → defined on the MANY side\nO2O → defined on either side\nM2M → defined on either side",
               "y"
-            ]
-          ]
-        },
-        {
-          "say": "Field options let you control allowed values. The most tested ones in exams are null, blank, default, and auto_now_add.",
-          "add": [
-            [
-              "h",
-              "Field options — most tested"
-            ],
-            [
-              "w",
-              "{b:default=value} — used when you don't supply a value on creation"
-            ],
-            [
-              "w",
-              "{b:null=True} — allows NULL in the database column (database level)"
-            ],
-            [
-              "w",
-              "{b:blank=True} — allows empty value in forms (form validation level)"
-            ],
-            [
-              "w",
-              "{b:auto_now_add=True} — set to now on first creation, then read-only"
-            ],
-            [
-              "sticky",
-              "{r:null} = database level\n{g:blank} = form validation level\nThey are DIFFERENT. Both can be True.",
-              "p"
             ],
             [
               "try",
               {
-                "q": "You want an optional 'notes' field on a form. Which option do you add to TextField?",
+                "q": "An Application belongs to one Job. One Job can have many Applications. Which field?",
                 "code": null,
-                "ok": "blank=True",
+                "ok": "ForeignKey on Application, pointing to Job",
                 "bad": [
-                  "null=True",
-                  "null=True, blank=True",
-                  "required=False"
+                  "ForeignKey on Job, pointing to Application",
+                  "OneToOneField on Application",
+                  "ManyToManyField on Job"
                 ],
-                "why": "For text fields, blank=True is enough — empty string is stored. null=True adds NULL as a second 'empty' value, creating query inconsistency. required=False is a form concept, not a model field option."
+                "why": "ForeignKey goes on the 'many' side — Application. It points to the 'one' side — Job. The same as Meeting.room: Meeting is many, Room is one."
               }
             ]
           ]
@@ -3850,103 +3718,111 @@
       ]
     },
     {
-      "id": "dj7",
-      "ch": "ch3",
-      "t": "dj.migrations",
-      "title": "Migration workflow — 3 steps, every time",
+      "id": "dj12",
+      "ch": "ch5",
+      "t": "dj.relations",
+      "title": "on_delete — what happens when you delete the parent?",
       "steps": [
         {
-          "say": "Every time you change a model, you must run two commands to update the database. Think of it as: write the instructions, then execute them.",
+          "say": "on_delete is required on every ForeignKey. It tells Django what to do with the children when the parent is deleted.",
           "add": [
             [
               "h",
-              "The 3-step migration workflow"
+              "on_delete options explained"
             ],
             [
               "dia",
               {
                 "w": 360,
-                "h": 310,
+                "h": 320,
                 "items": [
                   [
                     "box",
-                    80,
-                    10,
-                    200,
-                    46,
-                    "Step 1: edit models.py",
-                    "blue",
-                    "add or change a field"
-                  ],
-                  [
-                    "arrow",
-                    180,
-                    58,
-                    180,
                     100,
-                    "green"
+                    10,
+                    160,
+                    40,
+                    "Room deleted",
+                    "red",
+                    "parent"
                   ],
                   [
-                    "text",
-                    192,
-                    76,
-                    "generates script",
-                    "green",
-                    13
+                    "arrow",
+                    180,
+                    52,
+                    180,
+                    82,
+                    "red"
                   ],
                   [
                     "box",
-                    80,
-                    102,
-                    200,
-                    46,
-                    "Step 2: makemigrations",
+                    10,
+                    86,
+                    100,
+                    40,
+                    "CASCADE",
+                    "red",
+                    "delete meetings"
+                  ],
+                  [
+                    "box",
+                    130,
+                    86,
+                    100,
+                    40,
+                    "SET_NULL",
                     "orange",
-                    "writes the migration file"
+                    "room = None"
                   ],
                   [
-                    "arrow",
-                    180,
-                    150,
-                    180,
-                    192,
-                    "green"
+                    "box",
+                    250,
+                    86,
+                    100,
+                    40,
+                    "PROTECT",
+                    "blue",
+                    "block deletion"
                   ],
                   [
                     "text",
-                    192,
-                    168,
-                    "applies script",
-                    "green",
-                    13
+                    10,
+                    136,
+                    "children deleted",
+                    "red",
+                    12
                   ],
                   [
-                    "box",
-                    80,
-                    194,
-                    200,
-                    46,
-                    "Step 3: migrate",
-                    "green",
-                    "runs script on database"
+                    "text",
+                    130,
+                    136,
+                    "children kept",
+                    "orange",
+                    12
                   ],
                   [
-                    "arrow",
-                    180,
-                    242,
-                    180,
-                    272,
-                    "green"
+                    "text",
+                    130,
+                    150,
+                    "room field = NULL",
+                    "orange",
+                    12
                   ],
                   [
-                    "box",
-                    80,
-                    274,
-                    200,
-                    36,
-                    "Database updated!",
-                    "purple",
-                    ""
+                    "text",
+                    250,
+                    136,
+                    "raises error",
+                    "blue",
+                    12
+                  ],
+                  [
+                    "text",
+                    250,
+                    150,
+                    "if children exist",
+                    "blue",
+                    12
                   ]
                 ]
               }
@@ -3954,70 +3830,36 @@
           ]
         },
         {
-          "say": "Here are all four migration commands you need to know, with the professor's real terminal output.",
+          "say": "Here is the code for each option, with the trap for SET_NULL.",
           "add": [
             [
               "h",
-              "The 4 migration commands"
+              "Three on_delete options in code"
             ],
             [
               "code",
-              "# 1. Generate migration script from model changes\npython manage.py makemigrations\n\n# 2. Apply all pending migrations\npython manage.py migrate\n\n# 3. Check which migrations are applied\npython manage.py showmigrations meetings\n# meetings\n#  [X] 0001_initial\n\n# 4. See the SQL (read-only, no changes)\npython manage.py sqlmigrate meetings 0001",
-              {}
-            ]
-          ]
-        },
-        {
-          "say": "Here is the actual SQL Django generates for the Room model. You can inspect any migration with sqlmigrate.",
-          "add": [
-            [
-              "h",
-              "sqlmigrate — real output"
-            ],
-            [
-              "code",
-              "$ python manage.py sqlmigrate meetings 0001\nBEGIN;\nCREATE TABLE \"meetings_room\" (\n  \"id\" integer NOT NULL PRIMARY KEY AUTOINCREMENT,\n  \"name\" varchar(50) NOT NULL,\n  \"floor\" integer NOT NULL,\n  \"room_number\" integer NOT NULL\n);\nCREATE TABLE \"meetings_meeting\" (\n  \"id\" integer NOT NULL PRIMARY KEY AUTOINCREMENT,\n  \"title\" varchar(200) NOT NULL,\n  \"date\" date NOT NULL,\n  \"start_time\" time NOT NULL,\n  \"duration\" integer NOT NULL\n);\nCOMMIT;",
-              {}
+              "# CASCADE — most common\nroom = models.ForeignKey(Room, on_delete=models.CASCADE)\n\n# SET_NULL — keep the meeting, clear the room\n# REQUIRES null=True!\nroom = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True)\n\n# PROTECT — prevent deleting a room that has meetings\nroom = models.ForeignKey(Room, on_delete=models.PROTECT)",
+              {
+                "5": "← null=True is REQUIRED for SET_NULL"
+              }
             ],
             [
               "sticky",
-              "Django adds 'id' automatically — you never define it.\nIt is always an integer primary key.",
-              "b"
-            ]
-          ]
-        },
-        {
-          "say": "The most common mistake: changing models.py but forgetting to migrate. Here's what breaks and how to fix it.",
-          "add": [
-            [
-              "h",
-              "The #1 migration mistake"
-            ],
-            [
-              "w",
-              "{r:What happened:} Added a 'location' field to Meeting — did NOT run makemigrations + migrate"
-            ],
-            [
-              "code",
-              "# This crashes:\nMeeting.objects.filter(location='Room 101')\n# OperationalError: no such column: meetings_meeting.location",
-              {}
-            ],
-            [
-              "w",
-              "{g:Fix:} Run makemigrations then migrate — always both, always in order"
+              "SET_NULL without null=True\n→ IntegrityError at runtime!",
+              "r"
             ],
             [
               "try",
               {
-                "q": "You added a field to a model and ran makemigrations but NOT migrate. What happens?",
+                "q": "You want meetings to survive when their room is deleted, but meeting.room should become None. Which on_delete?",
                 "code": null,
-                "ok": "OperationalError: no such column",
+                "ok": "SET_NULL (with null=True on the field)",
                 "bad": [
-                  "The field returns None",
-                  "Django auto-creates the column",
-                  "ImproperlyConfigured error"
+                  "CASCADE",
+                  "PROTECT",
+                  "DO_NOTHING"
                 ],
-                "why": "makemigrations only generates the script. migrate actually creates the column in the database. Without migrate, the schema has not changed."
+                "why": "SET_NULL keeps the Meeting but sets meeting.room = None. You must add null=True to the ForeignKey field or the database will reject the NULL value."
               }
             ]
           ]
@@ -4025,56 +3867,56 @@
       ]
     },
     {
-      "id": "dj8",
-      "ch": "ch3",
-      "t": "dj.models",
-      "title": "Exam-style: complete Job & Application models",
+      "id": "dj13",
+      "ch": "ch5",
+      "t": "dj.relations",
+      "title": "Exam-style: complete Job & Application with ForeignKey",
       "steps": [
         {
-          "say": "This is the exact style of Part 3 on your exam. You'll see a models.py with blanks — let's work through it step by step.",
+          "say": "This is the exact problem from your real exam — complete the models.py with the correct relation field.",
           "add": [
             [
               "h",
-              "Exam Part 3 — complete models.py"
+              "Exam Part 3 — relations blank-fill"
             ],
             [
               "code",
-              "from django.db import models\n\nclass Job(models.Model):\n    title = models._______(max_length=200)   # (1)\n    description = models._______()           # (2) long text\n\nclass Application(models.Model):\n    candidate_name = models.CharField(max_length=100)\n    job = models._______(Job,               # (3)\n              on_delete=models._______)     # (4)\n    status = models.CharField(max_length=10)\n    application_date = models._______(      # (5)\n              auto_now_add=True)",
+              "from django.db import models\n\nclass Job(models.Model):\n    title = models.CharField(max_length=200)     # (1)\n    description = models.TextField()             # (2)\n    def __str__(self):\n        return self.title\n\nclass Application(models.Model):\n    candidate_name = models.CharField(max_length=100)\n    job = models._______(Job,                    # (3)\n              on_delete=models._______)          # (4)\n              # optional: related_name='_____') # (5)\n    status = models.CharField(max_length=10)\n    application_date = models.DateField(auto_now_add=True)",
               {}
             ]
           ]
         },
         {
-          "say": "Now let's fill in each blank, thinking through the reason for each choice.",
+          "say": "Let's fill in each blank and understand the reasoning.",
           "add": [
             [
               "h",
-              "Solving each blank"
+              "Blank by blank"
             ],
             [
               "w",
-              "{b:(1) CharField} — short text with max_length. Title is short → CharField(max_length=200)"
+              "{b:(1) CharField} — title is short text, max_length required"
             ],
             [
               "w",
-              "{b:(2) TextField} — long text, no max_length needed. Description can be paragraphs"
+              "{b:(2) TextField} — description is long text"
             ],
             [
               "w",
-              "{b:(3) ForeignKey} — many Applications to one Job = one-to-many = ForeignKey"
+              "{b:(3) ForeignKey} — many Applications belong to one Job"
             ],
             [
               "w",
-              "{b:(4) CASCADE} — when a Job is deleted, delete all its Applications"
+              "{b:(4) CASCADE} — delete Applications when Job is deleted"
             ],
             [
               "w",
-              "{b:(5) DateField} — stores date only. auto_now_add=True sets it on creation"
+              "{b:(5) 'applications'} — optional, makes job.applications.all() work"
             ]
           ]
         },
         {
-          "say": "Here is the complete solution. This is what a perfect exam answer looks like.",
+          "say": "Here is the full solution. This is the complete answer the exam correction expects.",
           "add": [
             [
               "h",
@@ -4082,29 +3924,28 @@
             ],
             [
               "code",
-              "from django.db import models\n\nclass Job(models.Model):\n    title = models.CharField(max_length=200)\n    description = models.TextField()\n\n    def __str__(self):\n        return self.title\n\nclass Application(models.Model):\n    candidate_name = models.CharField(max_length=100)\n    job = models.ForeignKey(Job, on_delete=models.CASCADE)\n    status = models.CharField(max_length=10)\n    application_date = models.DateField(auto_now_add=True)\n\n    def __str__(self):\n        return f\"{self.candidate_name} - {self.job.title}\"",
+              "from django.db import models\n\nclass Job(models.Model):\n    title = models.CharField(max_length=200)\n    description = models.TextField()\n    def __str__(self):\n        return self.title\n\nclass Application(models.Model):\n    candidate_name = models.CharField(max_length=100)\n    job = models.ForeignKey(Job,\n              on_delete=models.CASCADE,\n              related_name='applications')\n    status = models.CharField(max_length=10)\n    application_date = models.DateField(auto_now_add=True)\n    def __str__(self):\n        return f\"{self.candidate_name} - {self.job.title}\"",
               {
-                "8": "← ForeignKey links Application to Job",
-                "9": "← CASCADE: delete apps when job deleted"
+                "9": "← related_name enables job.applications.all()"
               }
             ],
             [
               "sticky",
-              "Always add __str__ to both models.\nThe exam gives points for it.",
+              "Always add __str__ to both models.\nAlways add related_name when exam specifies it.",
               "g"
             ],
             [
               "try",
               {
-                "q": "If a Job is deleted and on_delete=models.CASCADE, what happens to its Applications?",
+                "q": "After defining related_name='applications', how do you get all Applications for a job?",
                 "code": null,
-                "ok": "All Applications linked to that Job are automatically deleted",
+                "ok": "job.applications.all()",
                 "bad": [
-                  "Applications are kept, job field set to NULL",
-                  "Django raises an error and prevents deletion",
-                  "Applications are archived"
+                  "job.application_set.all()",
+                  "Application.objects.all()",
+                  "job.get_applications()"
                 ],
-                "why": "CASCADE = cascade the delete. When the parent (Job) is deleted, all children (Application) with that ForeignKey are also deleted. Use SET_NULL to keep them with job=NULL instead."
+                "why": "related_name replaces the default _set accessor. With related_name='applications': job.applications.all(). Without it: job.application_set.all(). Both return the same queryset."
               }
             ]
           ]
@@ -4112,148 +3953,126 @@
       ]
     },
     {
-      "id": "dj9",
-      "ch": "ch4",
-      "t": "dj.admin",
-      "title": "Django Admin — from zero to working panel",
+      "id": "dj14",
+      "ch": "ch6",
+      "t": "dj.templates",
+      "title": "Template tags — the essential toolkit",
       "steps": [
         {
-          "say": "The admin panel is one of Django's killer features. You get a full CRUD interface for your models with almost no code. Let's set it up step by step.",
+          "say": "Django templates use two types of syntax: {{ }} for output and {% %} for logic. Let's map every tag you need for the exam.",
           "add": [
             [
               "h",
-              "Admin setup — the correct order"
+              "Template syntax at a glance"
             ],
             [
-              "dia",
-              {
-                "w": 360,
-                "h": 320,
-                "items": [
-                  [
-                    "box",
-                    60,
-                    10,
-                    240,
-                    44,
-                    "1. manage.py migrate",
-                    "blue",
-                    "creates auth_user table"
-                  ],
-                  [
-                    "arrow",
-                    180,
-                    56,
-                    180,
-                    90,
-                    "green"
-                  ],
-                  [
-                    "box",
-                    60,
-                    92,
-                    240,
-                    44,
-                    "2. manage.py createsuperuser",
-                    "blue",
-                    "creates admin account"
-                  ],
-                  [
-                    "arrow",
-                    180,
-                    138,
-                    180,
-                    172,
-                    "green"
-                  ],
-                  [
-                    "box",
-                    60,
-                    174,
-                    240,
-                    44,
-                    "3. Register model in admin.py",
-                    "orange",
-                    "admin.site.register(Room)"
-                  ],
-                  [
-                    "arrow",
-                    180,
-                    220,
-                    180,
-                    254,
-                    "green"
-                  ],
-                  [
-                    "box",
-                    60,
-                    256,
-                    240,
-                    44,
-                    "4. Visit /admin/ in browser",
-                    "green",
-                    "log in and manage data"
-                  ]
-                ]
-              }
+              "w",
+              "{b:{{ variable }}} — display a value from context"
+            ],
+            [
+              "w",
+              "{b:{{ variable.field }}} — access an attribute or dict key"
+            ],
+            [
+              "w",
+              "{b:{% for x in list %}...{% endfor %}} — loop"
+            ],
+            [
+              "w",
+              "{b:{% empty %}} — inside for: runs when list is empty"
+            ],
+            [
+              "w",
+              "{b:{% if cond %}...{% elif %}...{% else %}...{% endif %}} — condition"
+            ],
+            [
+              "w",
+              "{b:{% url 'name' arg %}} — reverse a named URL"
+            ],
+            [
+              "w",
+              "{b:{% csrf_token %}} — CSRF protection in POST forms"
+            ],
+            [
+              "w",
+              "{b:{% extends 'base.html' %}} — inherit a base template"
+            ],
+            [
+              "w",
+              "{b:{% block name %}...{% endblock %}} — define/fill a slot"
+            ],
+            [
+              "w",
+              "{b:{% include 'frag.html' %}} — insert a template fragment"
+            ],
+            [
+              "w",
+              "{b:{% load static %}  {% static 'file.css' %}} — static files"
+            ],
+            [
+              "w",
+              "{b:{# comment #}} or {b:{% comment %}...{% endcomment %}} — comments"
             ]
           ]
         },
         {
-          "say": "Here is the complete admin.py from the professor's Meeting Planner project.",
+          "say": "Here is the complete home.html from the professor's Meeting Planner — the most exam-tested template.",
           "add": [
             [
               "h",
-              "meetings/admin.py — professor's code"
+              "Professor's home.html — annotated"
             ],
             [
               "code",
-              "from django.contrib import admin\nfrom .models import Meeting, Room\n\nadmin.site.register(Meeting)\nadmin.site.register(Room)",
+              "{% extends \"base.html\" %}\n{% block title %}HOME{% endblock %}\n{% block content %}\n<h2>Meetings</h2>\n<ul>\n{% for meeting in meetings %}\n  <li>\n    <a href=\"{% url 'detail' meeting.id %}\">\n      {{ meeting.title }}\n    </a>\n  </li>\n{% empty %}\n  <li>No meetings yet.</li>\n{% endfor %}\n</ul>\n{% endblock %}",
               {
-                "0": "← import admin from django.contrib",
-                "1": "← relative import — this app's models.py"
+                "0": "← MUST be first line",
+                "5": "← 'meetings' comes from context dict",
+                "7": "← url tag with argument"
+              }
+            ],
+            [
+              "sticky",
+              "{% extends %} = line 1, always\n{% empty %} = fallback for empty list\n{% url 'name' arg %} = never hardcode paths",
+              "y"
+            ]
+          ]
+        },
+        {
+          "say": "CSRF token is the most tested single tag. It goes inside every POST form — no exceptions.",
+          "add": [
+            [
+              "h",
+              "{% csrf_token %} — exam question 1"
+            ],
+            [
+              "code",
+              "<form method=\"post\">\n  {% csrf_token %}\n  {{ form.as_p }}\n  <button type=\"submit\">Save</button>\n</form>",
+              {
+                "1": "← REQUIRED. Without it → 403 Forbidden"
               }
             ],
             [
               "w",
-              "After this: visit {b:/admin/meetings/meeting/} to manage Meetings, {b:/admin/meetings/room/} for Rooms"
+              "Django generates a hidden input: <code>&lt;input type='hidden' name='csrfmiddlewaretoken' value='...'&gt;</code>"
             ],
             [
               "sticky",
-              "Without register(), the model is\ninvisible in admin — no error,\njust silently missing.",
+              "Exam Q1: 'What protects forms against CSRF?'\nAnswer: {% csrf_token %}",
               "r"
-            ]
-          ]
-        },
-        {
-          "say": "You can customise what the admin shows with a ModelAdmin class. These are the most useful options.",
-          "add": [
-            [
-              "h",
-              "ModelAdmin customisation"
-            ],
-            [
-              "code",
-              "from django.contrib import admin\nfrom .models import Meeting\n\n@admin.register(Meeting)\nclass MeetingAdmin(admin.ModelAdmin):\n    list_display  = ['title', 'date', 'start_time', 'duration']\n    list_filter   = ['date']\n    search_fields = ['title']",
-              {
-                "3": "← shortcut for admin.site.register(Meeting, MeetingAdmin)",
-                "4": "← columns in the list view",
-                "5": "← sidebar date filter",
-                "6": "← adds a search box"
-              }
             ],
             [
               "try",
               {
-                "q": "Without __str__ on Meeting, how does the admin list show each meeting?",
+                "q": "You submit a POST form and get HTTP 403 Forbidden. What is the most likely cause?",
                 "code": null,
-                "ok": "As 'Meeting object (1)', 'Meeting object (2)', etc.",
+                "ok": "{% csrf_token %} is missing from the form",
                 "bad": [
-                  "By the title field automatically",
-                  "By the primary key number only",
-                  "Django raises an error"
+                  "The view is missing @login_required",
+                  "The URL pattern is wrong",
+                  "The form method is not 'post'"
                 ],
-                "why": "Without __str__, Python uses ClassName object (pk). Define __str__ on every model so the admin is readable."
+                "why": "Django's CSRF middleware checks for the token on every POST. Missing token → 403. This was the first question on the actual exam."
               }
             ]
           ]
@@ -4261,88 +4080,90 @@
       ]
     },
     {
-      "id": "dj10",
-      "ch": "ch4",
-      "t": "dj.admin",
-      "title": "Exam-style: complete admin.py",
+      "id": "dj15",
+      "ch": "ch6",
+      "t": "dj.templates",
+      "title": "Exam-style: complete a template (for/empty/extends/url)",
       "steps": [
         {
-          "say": "Exam Part 3 sometimes asks you to complete admin.py. Let's practice the exact blanks, then see the correct procedure.",
+          "say": "Template completion is Part 3 Q4 on every exam. Let's work through the exact exam question about Job listing.",
           "add": [
             [
               "h",
-              "Complete admin.py — exam style"
+              "Exam Part 3 Q4 — complete the template"
             ],
             [
               "code",
-              "# meetings/admin.py\nfrom django.contrib import ___(1)___\nfrom .___(2)___ import Meeting, Room\n\n___(1)___.site.___(3)___(___(4)___)\n___(1)___.site.___(3)___(___(5)___)",
+              "<!DOCTYPE html>\n<html lang=\"fr\">\n<h1>Liste des Offres d'Emploi</h1>\n<ul>\n  _____(1)_____ job in _____(2)_____ _____\n  <li>\n    <p>{{ _____(3)_____ }}</p>\n    <p>{{ _____(4)_____ }}</p>\n  </li>\n  {_____(5)_____}\n  <p>Aucun poste disponible.</p>\n  {_____(6)_____}\n</ul>",
               {}
             ]
           ]
         },
         {
-          "say": "Here is the solution with explanation for each blank.",
+          "say": "Now let's fill in every blank, one by one.",
           "add": [
             [
               "h",
-              "Solution — blank by blank"
+              "Blank by blank solution"
             ],
             [
               "w",
-              "{b:(1) admin} — the module from django.contrib that handles all admin operations"
+              "{b:(1) {% for} — start the loop tag"
             ],
             [
               "w",
-              "{b:(2) models} — relative import (.models = this app's models.py file)"
+              "{b:(2) jobs} — the context variable name (from context_object_name='jobs' in the CBV)"
             ],
             [
               "w",
-              "{b:(3) register} — admin.site.register() publishes the model to the admin"
+              "{b:(3) job.title} — access the title field on each job object"
             ],
             [
               "w",
-              "{b:(4) Meeting} — the model class, not a string"
+              "{b:(4) job.description} — access the description field"
             ],
             [
               "w",
-              "{b:(5) Room} — same pattern for the second model"
+              "{b:(5) % empty %}} — fallback when jobs list is empty (note: { + % = {%)"
             ],
             [
-              "code",
-              "# Full verified solution:\nfrom django.contrib import admin\nfrom .models import Meeting, Room\n\nadmin.site.register(Meeting)\nadmin.site.register(Room)",
-              {}
+              "w",
+              "{b:(6) % endfor %}} — close the for loop"
             ]
           ]
         },
         {
-          "say": "Here is the full procedure including the createsuperuser order. The sequence is critical — this appears in every exam.",
+          "say": "Here is the full completed template — the perfect exam answer.",
           "add": [
             [
               "h",
-              "Correct procedure from scratch"
+              "Full solution — verified rendering"
             ],
             [
               "code",
-              "# 1. Apply migrations first (creates auth_user table)\npython manage.py migrate\n\n# 2. Create the superuser account (interactive)\npython manage.py createsuperuser\n\n# 3. Run the server\npython manage.py runserver\n\n# 4. Visit http://127.0.0.1:8000/admin/\n#    Log in with your superuser credentials",
-              {}
+              "<!DOCTYPE html>\n<html lang=\"fr\">\n<h1>Liste des Offres d'Emploi</h1>\n<ul>\n  {% for job in jobs %}\n  <li>\n    <p>{{ job.title }}</p>\n    <p>{{ job.description }}</p>\n  </li>\n  {% empty %}\n  <p>Aucun poste disponible.</p>\n  {% endfor %}\n</ul>",
+              {
+                "4": "← 'jobs' from context_object_name='jobs' in JobListView",
+                "9": "← runs when no jobs exist"
+              }
             ],
             [
               "sticky",
-              "migrate BEFORE createsuperuser.\nOtherwise: no such table: auth_user",
-              "r"
+              "If CBV uses context_object_name='jobs'\nthen template uses 'jobs'.\nIf not set: default is 'job_list'.",
+              "b"
             ],
             [
               "try",
               {
-                "q": "You register a model in admin.py but it doesn't appear in the admin panel. What is the most likely cause?",
+                "q": "A ListView has context_object_name='posts'. What variable do you use in the template?",
                 "code": null,
-                "ok": "You forgot to run migrate — the table doesn't exist yet",
+                "ok": "{% for post in posts %}",
                 "bad": [
-                  "You need to restart the server",
-                  "admin.py has the wrong filename",
-                  "The model must have a ModelAdmin class"
+                  "{% for post in post_list %}",
+                  "{% for post in object_list %}",
+                  "{% for post in all_posts %}"
                 ],
-                "why": "If the migration hasn't been run, the database table doesn't exist and the admin may hide or error on that model. Always run migrate after creating models. Also check: is admin.site.register() actually called?"
+                "why": "context_object_name overrides the default. Default would be 'post_list'. With context_object_name='posts', you use 'posts'. object_list is an older fallback that also works but is not what you set."
               }
             ]
           ]
