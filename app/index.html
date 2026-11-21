@@ -924,8 +924,19 @@ function cardsForLesson(ch, i) { return C.cards.filter(c => cardChapter(c) === c
 /* ================= teacher mode (whiteboard lessons) ================= */
 let TTS = null;
 (async () => { try { if (window.claude?.use) TTS = await claude.use("tts"); } catch (e) {} if (route === "learn" && sub?.board) render(); })();
-function say(text) { if (!TTS || !S.voice) return; try { TTS.speak(text).catch(() => {}); } catch (e) {} }
-function hush() { try { TTS && TTS.stop(); } catch (e) {} }
+// Teacher voice: Claude's voice inside Claude; otherwise the browser's own voice (works on localhost / GitHub Pages).
+const WEBVOICE = typeof window.speechSynthesis !== "undefined" && typeof window.SpeechSynthesisUtterance !== "undefined";
+const hasVoice = () => !!TTS || WEBVOICE;
+function pickVoice() {
+  try { const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); return vs.find(v => /natural|neural|google|samantha|aria|jenny/i.test(v.name)) || vs[0] || null; } catch (e) { return null; }
+}
+function say(text) {
+  if (!S.voice) return;
+  if (TTS) { try { TTS.speak(text).catch(() => {}); } catch (e) {} return; }
+  if (!WEBVOICE) return;
+  try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = (v && v.lang) || "en-US"; u.rate = 1; speechSynthesis.speak(u); } catch (e) {}
+}
+function hush() { try { TTS && TTS.stop(); } catch (e) {} try { WEBVOICE && speechSynthesis.cancel(); } catch (e) {} }
 const COLV = { ink: "--ink", blue: "--blue", red: "--red", green: "--green", orange: "--orange", purple: "--purple", muted: "--muted" };
 const cv = c => `var(${COLV[c] || "--ink"})`;
 function mk(t) { // board markup: {r:..} red {b:..} blue {g:..} green {o:..} circled {hl:..} highlight {u:..} underline
@@ -991,7 +1002,7 @@ function vBoard(m) {
     inner += `<div class="${anim ? "anim" : ""}" data-step="${si}" style="display:flex;flex-direction:column;gap:14px;min-width:0">` + st.add.map((el, ei) => boardEl(el, `${B.id}-${si}-${ei}`, local, TM.tries)).join("") + `</div>`;
   });
   m.innerHTML = `<div class="tm"><div class="tm-top"><button class="link" data-back>← ${esc(chTitle(B.ch))}</button><h2>${idx + 1}. ${esc(B.title)}</h2>
-    ${TTS ? `<button class="voice ${S.voice ? "on" : ""}" data-voice aria-pressed="${!!S.voice}">${S.voice ? "🔊 Voice on" : "🔈 Voice off"}</button>` : ""}
+    ${hasVoice() ? `<button class="voice ${S.voice ? "on" : ""}" data-voice aria-pressed="${!!S.voice}">${S.voice ? "🔊 Voice on" : "🔈 Voice off"}</button>` : ""}
     <div class="dots" aria-label="Step ${k + 1} of ${B.steps.length}">${B.steps.map((_, i) => `<i class="${i < k ? "on" : i === k ? "cur" : ""}"></i>`).join("")}</div></div>
     <div class="wb" id="wb">${inner}</div></div>
     <div class="tm-bar"><div class="in"><div class="teacher" aria-hidden="true">👩‍🏫</div><div class="bubble" id="bubble"></div>
