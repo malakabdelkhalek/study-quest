@@ -934,6 +934,11 @@ function say(text) {
   if (!S.voice) return;
   if (TTS) { try { TTS.speak(text).catch(() => {}); } catch (e) {} return; }
   if (!WEBVOICE) return;
+  let vs = []; try { vs = speechSynthesis.getVoices(); } catch (e) {}
+  if (!vs.length && !say.warned) { // Linux Chromium/Brave without speech-dispatcher: speak() silently does nothing
+    say.warned = true;
+    setTimeout(() => { try { if (!speechSynthesis.getVoices().length) toast("🔇 No voice installed in this browser. Read the bubble, or see the README to turn the voice on."); } catch (e) {} }, 1200);
+  }
   try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); const v = pickVoice(); if (v) u.voice = v; u.lang = (v && v.lang) || "en-US"; u.rate = 1; speechSynthesis.speak(u); } catch (e) {}
 }
 function hush() { try { TTS && TTS.stop(); } catch (e) {} try { WEBVOICE && speechSynthesis.cancel(); } catch (e) {} }

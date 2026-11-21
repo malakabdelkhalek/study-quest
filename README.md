@@ -18,6 +18,22 @@ Built by Malak Abdelkhalek. Evolved from [PCAP-prep](https://github.com/malakabd
 - **Practice lab** — Python runs in the browser (Brython)
 - Themes: White / Dark / Night / Auto · Phone-first layout · Sound effects
 
+## Teacher voice
+
+Inside Claude the boards use Claude's voice. Run locally, they use your browser's built-in voice
+(**🔊 Voice on** at the top of each board). Chrome/Edge on Windows/macOS and Safari work out of the box.
+
+**Linux (Chrome, Chromium, Brave):** these browsers only speak when a voice service is installed **and**
+the browser is started with a flag:
+
+```bash
+sudo apt install speech-dispatcher espeak-ng
+# fully quit the browser first, then start it with:
+brave-browser --enable-speech-dispatcher        # or: google-chrome --enable-speech-dispatcher
+```
+
+Firefox on Linux only needs the `apt install` line.
+
 ## Content format
 Each subject lives in `app/content/<id>.json`:
 ```json

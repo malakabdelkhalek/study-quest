@@ -774,75 +774,75 @@
       [
        "dia",
        {
-        "w": 520,
-        "h": 120,
+        "w": 360,
+        "h": 330,
         "items": [
          [
           "box",
-          10,
-          40,
-          80,
-          40,
+          100,
+          8,
+          160,
+          46,
           "Browser",
           "blue",
-          "sends request"
+          "sends a request"
          ],
          [
           "arrow",
-          90,
-          60,
-          150,
-          60,
+          180,
+          56,
+          180,
+          96,
           "green",
-          "HTTP GET /pages/home/"
+          "GET /pages/home/"
          ],
          [
           "box",
-          150,
-          40,
-          80,
-          40,
+          100,
+          98,
+          160,
+          46,
           "urls.py",
           "orange",
-          "router"
+          "the router"
          ],
          [
           "arrow",
-          230,
-          60,
-          290,
-          60,
+          180,
+          146,
+          180,
+          186,
           "green",
-          "calls view"
+          "calls the view"
          ],
          [
           "box",
-          290,
-          40,
-          80,
-          40,
+          100,
+          188,
+          160,
+          46,
           "views.py",
           "green",
-          "logic"
+          "the logic"
          ],
          [
           "arrow",
-          370,
-          60,
-          430,
-          60,
+          180,
+          236,
+          180,
+          276,
           "green",
-          "returns"
+          "returns a response"
          ],
          [
           "box",
-          430,
-          40,
-          80,
-          40,
+          100,
+          278,
+          160,
+          46,
           "Browser",
           "blue",
-          "shows page"
+          "shows the page"
          ]
         ]
        }
@@ -859,66 +859,96 @@
       [
        "dia",
        {
-        "w": 480,
-        "h": 200,
+        "w": 360,
+        "h": 330,
         "items": [
          [
           "box",
-          10,
-          80,
-          100,
-          50,
+          110,
+          8,
+          140,
+          52,
+          "View",
+          "green",
+          "the logic"
+         ],
+         [
+          "box",
+          8,
+          150,
+          130,
+          52,
           "Model",
           "blue",
           "data + ORM"
          ],
          [
           "box",
-          190,
-          10,
-          100,
-          50,
-          "View",
-          "green",
-          "logic layer"
-         ],
-         [
-          "box",
-          190,
-          140,
-          100,
-          50,
+          222,
+          150,
+          130,
+          52,
           "Template",
           "orange",
-          "HTML output"
-         ],
-         [
-          "arrow",
-          110,
-          100,
-          190,
-          35,
-          "blue",
-          "query"
-         ],
-         [
-          "arrow",
-          290,
-          35,
-          190,
-          155,
-          "orange",
-          "context dict"
+          "HTML layout"
          ],
          [
           "box",
-          370,
-          80,
-          100,
-          50,
+          110,
+          270,
+          140,
+          52,
           "Response",
-          "green",
-          "HTTP 200 HTML"
+          "purple",
+          "HTML page"
+         ],
+         [
+          "arrow",
+          140,
+          62,
+          80,
+          146,
+          "blue"
+         ],
+         [
+          "text",
+          60,
+          100,
+          "asks for data",
+          "blue",
+          14
+         ],
+         [
+          "arrow",
+          220,
+          62,
+          280,
+          146,
+          "orange"
+         ],
+         [
+          "text",
+          300,
+          100,
+          "sends context",
+          "orange",
+          14
+         ],
+         [
+          "arrow",
+          270,
+          204,
+          215,
+          266,
+          "purple"
+         ],
+         [
+          "text",
+          300,
+          240,
+          "renders",
+          "purple",
+          14
          ]
         ]
        }
@@ -1149,63 +1179,71 @@
       [
        "dia",
        {
-        "w": 500,
-        "h": 200,
+        "w": 360,
+        "h": 335,
         "items": [
          [
           "box",
-          10,
-          80,
           100,
-          40,
+          8,
+          160,
+          48,
           "Browser",
           "blue",
           "GET /pages/home/"
          ],
          [
           "arrow",
-          110,
-          100,
-          170,
-          100,
+          180,
+          58,
+          180,
+          96,
           "green"
          ],
          [
           "box",
-          170,
-          60,
-          130,
-          80,
+          40,
+          98,
+          280,
+          58,
           "project/urls.py",
           "orange",
           "path('pages/', include(...))"
          ],
          [
           "arrow",
-          300,
-          100,
-          360,
-          100,
+          180,
+          158,
+          180,
+          206,
           "green",
-          "strips 'pages/'"
+          "removes 'pages/'"
          ],
          [
           "box",
-          360,
-          60,
-          130,
-          80,
+          40,
+          208,
+          280,
+          58,
           "pages/urls.py",
           "green",
-          "path('home/', view, name='home')"
+          "path('home/', views.home)"
          ],
          [
           "text",
-          240,
-          150,
-          "Django removes the matched prefix before passing to include()",
+          180,
+          296,
+          "what is left to match: home/",
           "muted",
-          11
+          15
+         ],
+         [
+          "text",
+          180,
+          320,
+          "→ views.home runs",
+          "green",
+          15
          ]
         ]
        }
@@ -1412,28 +1450,140 @@
       [
        "dia",
        {
-        "w": 480,
-        "h": 180,
+        "w": 360,
+        "h": 300,
         "items": [
          [
-          "box",
+          "text",
+          90,
           10,
-          10,
-          200,
-          160,
           "Without inheritance",
-          "orange",
-          "home.html: full HTML ×\nabout.html: full HTML ×\ndetail.html: full HTML ×\n= 3 copies of navbar/footer"
+          "red",
+          16
+         ],
+         [
+          "text",
+          268,
+          10,
+          "With inheritance",
+          "green",
+          16
          ],
          [
           "box",
-          270,
-          10,
-          200,
-          160,
-          "With inheritance",
+          15,
+          32,
+          150,
+          46,
+          "home.html",
+          "red",
+          "full HTML"
+         ],
+         [
+          "box",
+          15,
+          94,
+          150,
+          46,
+          "about.html",
+          "red",
+          "full HTML"
+         ],
+         [
+          "box",
+          15,
+          156,
+          150,
+          46,
+          "detail.html",
+          "red",
+          "full HTML"
+         ],
+         [
+          "box",
+          195,
+          32,
+          140,
+          52,
+          "base.html",
+          "blue",
+          "layout + blocks"
+         ],
+         [
+          "box",
+          195,
+          120,
+          140,
+          46,
+          "home.html",
           "green",
-          "base.html: layout + blocks\nhome.html: fills blocks only ✓\nabout.html: fills blocks only ✓\n= change once → all pages update"
+          "{% extends %}"
+         ],
+         [
+          "box",
+          195,
+          184,
+          140,
+          46,
+          "about.html",
+          "green",
+          "{% extends %}"
+         ],
+         [
+          "arrow",
+          265,
+          118,
+          265,
+          88,
+          "green"
+         ],
+         [
+          "arrow",
+          337,
+          207,
+          352,
+          207,
+          "green"
+         ],
+         [
+          "arrow",
+          352,
+          207,
+          340,
+          62,
+          "green"
+         ],
+         [
+          "text",
+          90,
+          232,
+          "navbar copied 3 times",
+          "red",
+          14
+         ],
+         [
+          "text",
+          90,
+          254,
+          "change it 3 times ✗",
+          "red",
+          14
+         ],
+         [
+          "text",
+          268,
+          254,
+          "change base.html once",
+          "green",
+          14
+         ],
+         [
+          "text",
+          268,
+          276,
+          "→ every page updates ✓",
+          "green",
+          14
          ]
         ]
        }
