@@ -269,6 +269,87 @@
           "n": 10
         }
       ]
+    },
+    {
+      "title": "Forms — handling user input",
+      "sub": "forms.Form, ModelForm, is_valid(), cleaned_data, custom validation",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read the 7 lessons",
+          "ch": "ch7",
+          "from": 0,
+          "to": 6
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: 3 boards",
+          "ids": [
+            "dj16",
+            "dj17",
+            "dj18"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 10 questions",
+          "pick": {
+            "ts": [
+              "dj.forms"
+            ]
+          },
+          "n": 10,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: forms exercises",
+          "chs": [
+            "ch7"
+          ],
+          "n": 20
+        }
+      ]
+    },
+    {
+      "title": "ORM — querying the database",
+      "sub": "QuerySet, filter, get, order_by, create, save, delete, select_related",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read the 7 lessons",
+          "ch": "ch8",
+          "from": 0,
+          "to": 6
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: 2 boards",
+          "ids": [
+            "dj19",
+            "dj20"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 10 questions",
+          "pick": {
+            "ts": [
+              "dj.orm"
+            ]
+          },
+          "n": 10,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: ORM exercises",
+          "chs": [
+            "ch8"
+          ],
+          "n": 20
+        }
+      ]
     }
   ],
   "chapters": [
@@ -511,6 +592,90 @@
           "title": "7. Filters",
           "t": "dj.templates",
           "html": "<ul><li>Filters transform a value: <code>{{ value|filtername }}</code> or <code>{{ value|filtername:arg }}</code>.</li><li><code>{{ name|upper }}</code> → <code>MALAK</code></li><li><code>{{ name|lower }}</code> → <code>malak</code></li><li><code>{{ items|length }}</code> → <code>3</code></li><li><code>{{ text|truncatechars:10 }}</code> → <code>Hello wor…</code></li><li><code>{{ value|default:'N/A' }}</code> → shows 'N/A' if value is empty/falsy</li><li><code>{{ date|date:'d/m/Y' }}</code> → <code>15/01/2027</code></li><li><code>{{ html|safe }}</code> → renders HTML tags (don't use on user input!)</li><li>Chain filters: <code>{{ name|lower|truncatechars:20 }}</code></li><li><span class='r'>Trap:</span> <code>{{ text|safe }}</code> on untrusted user input = XSS vulnerability. Only use <code>|safe</code> on content you control.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch7",
+      "num": 7,
+      "title": "Forms — handling user input",
+      "lessons": [
+        {
+          "title": "1. Why forms matter",
+          "t": "dj.forms",
+          "html": "<ul><li>Forms are how users send data to Django. Every login box, search bar, and contact page is a form.</li><li>Django provides three layers: raw HTML <code>&lt;form&gt;</code> (Method 1), <code>forms.Form</code> (Method 2), and <code>forms.ModelForm</code> (Method 3).</li><li>Method 1 is the least code but the most dangerous — no validation, no CSRF by default if you forget the tag.</li><li>Method 2 adds field-level validation and cleans data for you via <code>form.cleaned_data</code>.</li><li>Method 3 ties directly to a model and can create/update database rows with a single <code>form.save()</code>.</li><li><span class='r'>Trap:</span> Every POST form in Django must include <code>{% csrf_token %}</code> inside the <code>&lt;form&gt;</code> tag, or Django returns 403 Forbidden.</li></ul>"
+        },
+        {
+          "title": "2. Method 1 — raw POST data",
+          "t": "dj.forms",
+          "html": "<ul><li>The simplest approach: read <code>request.POST['fieldname']</code> directly in the view.</li><pre><code>def contact_view(request):\n    if request.method == 'POST':\n        firstname = request.POST['firstname']\n        Contact.objects.create(\n            firstname=firstname,\n            lastname=request.POST['lastname'],\n            email=request.POST['email'],\n            message=request.POST['message']\n        )\n        return redirect('home')\n    return render(request, 'contact/contact.html')</code></pre><li>The HTML form must have <code>method=\"post\"</code> and each input must have a <code>name</code> attribute that matches <code>request.POST['name']</code>.</li><li><span class='r'>Trap:</span> <code>request.POST['key']</code> raises <code>KeyError</code> if the field is missing. Use <code>request.POST.get('key', '')</code> for optional fields.</li></ul>"
+        },
+        {
+          "title": "3. Method 2 — forms.Form",
+          "t": "dj.forms",
+          "html": "<ul><li>Define a form class in <code>forms.py</code>:</li><pre><code>from django import forms\n\nclass ContactForm(forms.Form):\n    firstname = forms.CharField(max_length=10)\n    lastname  = forms.CharField(max_length=10)\n    email     = forms.EmailField()\n    msg       = forms.CharField(widget=forms.Textarea)</code></pre><li>Use it in the view:</li><pre><code>def contact_view(request):\n    form = ContactForm(request.POST or None)\n    if form.is_valid():\n        data = form.cleaned_data\n        Contact.objects.create(\n            firstname=data['firstname'],\n            lastname=data['lastname'],\n            email=data['email'],\n            message=data['msg']\n        )\n        return redirect('home')\n    return render(request, 'contact.html', {'form': form})</code></pre><li><code>form.is_valid()</code> runs all field validators. <code>form.cleaned_data</code> gives you safe, converted Python values (not raw strings).</li><li><span class='r'>Trap:</span> Never access <code>form.cleaned_data</code> before calling <code>is_valid()</code> — it raises <code>AttributeError</code>.</li></ul>"
+        },
+        {
+          "title": "4. Method 3 — forms.ModelForm",
+          "t": "dj.forms",
+          "html": "<ul><li>A ModelForm generates form fields automatically from a model. Much less code than Method 2.</li><pre><code>from django import forms\nfrom .models import Contact\n\nclass ContactModelForm(forms.ModelForm):\n    class Meta:\n        model = Contact\n        fields = ['firstname', 'lastname', 'email', 'message']</code></pre><li>Use it in the view — <code>form.save()</code> creates the database row:</li><pre><code>def contact_view(request):\n    form = ContactModelForm(request.POST or None)\n    if form.is_valid():\n        form.save()\n        return redirect('home')\n    return render(request, 'contact.html', {'form': form})</code></pre><li><code>fields = '__all__'</code> includes every model field. Explicit list is safer.</li><li><span class='r'>Trap:</span> Using <code>fields = '__all__'</code> in production can expose sensitive fields. Always list fields explicitly.</li></ul>"
+        },
+        {
+          "title": "5. Rendering forms in templates",
+          "t": "dj.forms",
+          "html": "<ul><li>Three built-in render helpers:</li><li><code>{{ form.as_p }}</code> — wraps each field in a <code>&lt;p&gt;</code> tag. Most common.</li><li><code>{{ form.as_table }}</code> — wraps in <code>&lt;tr&gt;</code> tags. Needs an outer <code>&lt;table&gt;</code>.</li><li><code>{{ form.as_ul }}</code> — wraps in <code>&lt;li&gt;</code> tags. Needs outer <code>&lt;ul&gt;</code>.</li><li>Minimal form template:</li><pre><code>&lt;form method=\"post\"&gt;\n  {% csrf_token %}\n  {{ form.as_p }}\n  &lt;button type=\"submit\"&gt;Send&lt;/button&gt;\n&lt;/form&gt;</code></pre><li>Display errors: <code>{{ form.errors }}</code> or per-field: <code>{{ form.firstname.errors }}</code>.</li><li><span class='r'>Trap:</span> Forgetting <code>method=\"post\"</code> on the HTML form tag — the browser sends a GET and <code>request.POST</code> is empty.</li></ul>"
+        },
+        {
+          "title": "6. Custom validation",
+          "t": "dj.forms",
+          "html": "<ul><li>Add custom validation by defining a <code>clean_&lt;fieldname&gt;</code> method on the form class.</li><pre><code>from django.core.exceptions import ValidationError\nimport datetime\n\nclass MeetingForm(forms.ModelForm):\n    class Meta:\n        model = Meeting\n        fields = '__all__'\n\n    def clean_date(self):\n        date = self.cleaned_data['date']\n        if date &lt; datetime.date.today():\n            raise ValidationError(\"Meeting date must be in the future.\")\n        return date</code></pre><li><code>clean_&lt;field&gt;</code> must return the cleaned value or raise <code>ValidationError</code>.</li><li>For cross-field validation, override <code>clean(self)</code> (without field suffix).</li><li><span class='r'>Trap:</span> Forgetting to <code>return date</code> at the end of <code>clean_date()</code> sets the field to <code>None</code> in <code>cleaned_data</code>.</li></ul>"
+        },
+        {
+          "title": "7. Widgets",
+          "t": "dj.forms",
+          "html": "<ul><li>A <b>widget</b> controls how a form field is rendered as HTML. Each field type has a default widget.</li><li>Override a widget in the form field definition:</li><pre><code>class ContactForm(forms.Form):\n    msg = forms.CharField(widget=forms.Textarea)\n    date = forms.DateField(widget=forms.SelectDateWidget)</code></pre><li>Or override in a ModelForm's <code>Meta</code>:</li><pre><code>class MeetingForm(forms.ModelForm):\n    class Meta:\n        model = Meeting\n        fields = '__all__'\n        widgets = {\n            'date': forms.SelectDateWidget,\n        }</code></pre><li>Common widgets: <code>TextInput</code>, <code>Textarea</code>, <code>Select</code>, <code>CheckboxInput</code>, <code>DateInput</code>, <code>SelectDateWidget</code>, <code>PasswordInput</code>.</li><li><span class='r'>Trap:</span> <code>widget=forms.Textarea</code> (the class), not <code>widget=forms.Textarea()</code> in <code>Meta.widgets</code> — both actually work, but be consistent with your codebase.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch8",
+      "num": 8,
+      "title": "ORM — querying the database",
+      "lessons": [
+        {
+          "title": "1. The QuerySet",
+          "t": "dj.orm",
+          "html": "<ul><li>A <b>QuerySet</b> is a lazy collection of database rows. It is built up in Python and only hits the database when you evaluate it (iterate, convert to list, call <code>len()</code>, slice, etc.).</li><li>Every model's manager — <code>Model.objects</code> — is the starting point for all queries.</li><li>QuerySets are lazy: <code>Room.objects.filter(floor=1)</code> does NOT query the database immediately. The SQL runs only when you use the result.</li><li>QuerySets are chainable: each method returns a new QuerySet.</li><pre><code>rooms = Room.objects.filter(floor=1).order_by('name')[:5]</code></pre><li><span class='r'>Trap:</span> Calling <code>len(queryset)</code> evaluates the entire queryset. Use <code>queryset.count()</code> for counts — it runs <code>SELECT COUNT(*)</code> which is much faster.</li></ul>"
+        },
+        {
+          "title": "2. Retrieving objects — all, filter, get",
+          "t": "dj.orm",
+          "html": "<ul><li><code>Room.objects.all()</code> — returns all rows as a QuerySet.</li><li><code>Room.objects.filter(floor=1)</code> — returns rows matching the condition.</li><li><code>Room.objects.get(pk=1)</code> — returns exactly one row. Raises <code>DoesNotExist</code> if not found, <code>MultipleObjectsReturned</code> if more than one matches.</li><pre><code># all rooms\nrooms = Room.objects.all()\n\n# filter by field\nfloor1 = Room.objects.filter(floor=1)\n\n# get one (raises exception if not found)\nroom = Room.objects.get(pk=5)</code></pre><li><span class='r'>Trap:</span> <code>.get()</code> in a view without try/except crashes with an unhandled exception. Use <code>get_object_or_404</code> instead.</li></ul>"
+        },
+        {
+          "title": "3. Field lookups",
+          "t": "dj.orm",
+          "html": "<ul><li>Field lookups are appended to field names with double underscores: <code>field__lookup=value</code>.</li><li><code>__exact</code> — exact match (default). <code>filter(name='Conf A')</code> = <code>filter(name__exact='Conf A')</code>.</li><li><code>__iexact</code> — case-insensitive exact match.</li><li><code>__contains</code> — SQL LIKE '%value%'. <code>__icontains</code> — case-insensitive.</li><li><code>__startswith</code>, <code>__endswith</code> — prefix/suffix match.</li><li><code>__gt</code>, <code>__gte</code>, <code>__lt</code>, <code>__lte</code> — greater/less than comparisons.</li><li><code>__in</code> — value in a list: <code>filter(floor__in=[1,2])</code>.</li><li><code>__isnull</code> — <code>filter(room__isnull=True)</code>.</li><pre><code>Meeting.objects.filter(title__icontains='django')\nMeeting.objects.filter(duration__gte=2)\nRoom.objects.filter(floor__in=[1, 2])</code></pre><li><span class='r'>Trap:</span> Using <code>filter(name='conf a')</code> does a case-sensitive match and misses 'Conf A'. Use <code>__iexact</code> for user-facing searches.</li></ul>"
+        },
+        {
+          "title": "4. Ordering, slicing, counting",
+          "t": "dj.orm",
+          "html": "<ul><li><code>.order_by('name')</code> — ascending. <code>.order_by('-name')</code> — descending (prefix with <code>-</code>).</li><li>Default ordering can be set on the model's <code>Meta</code> class and applies automatically.</li><li>Slicing a QuerySet maps to SQL <code>LIMIT</code>/<code>OFFSET</code>:</li><pre><code>first5 = Room.objects.all()[:5]       # LIMIT 5\nskip2  = Room.objects.all()[2:7]      # OFFSET 2 LIMIT 5</code></pre><li><code>.count()</code> returns an integer via <code>SELECT COUNT(*)</code> — does not load rows into memory.</li><li><code>.exists()</code> returns <code>True</code>/<code>False</code> — the fastest way to check if any row matches.</li><pre><code>n = Room.objects.count()\nhas_rooms = Room.objects.filter(floor=5).exists()</code></pre><li><span class='r'>Trap:</span> Negative slicing (<code>queryset[-1]</code>) is not supported — raises <code>AssertionError</code>. Use <code>.order_by('-pk')[0]</code> instead.</li></ul>"
+        },
+        {
+          "title": "5. Creating, updating, deleting",
+          "t": "dj.orm",
+          "html": "<ul><li><b>Create — two ways:</b></li><pre><code># Option A: create() — one step\nr = Room.objects.create(name='Lab 1', floor=3, room_number=301)\n\n# Option B: instantiate + save()\nr = Room(name='Lab 1', floor=3, room_number=301)\nr.save()</code></pre><li><b>Update a single object:</b></li><pre><code>r = Room.objects.get(pk=1)\nr.name = 'Main Hall'\nr.save()</code></pre><li><b>Bulk update (SQL UPDATE in one query):</b></li><pre><code>Room.objects.filter(floor=5).update(floor=4)</code></pre><li><b>Delete a single object:</b></li><pre><code>r = Room.objects.get(pk=1)\nr.delete()</code></pre><li><b>Bulk delete:</b></li><pre><code>Room.objects.filter(floor=99).delete()</code></pre><li><span class='r'>Trap:</span> <code>.update()</code> and <code>.delete()</code> on a QuerySet bypass model <code>save()</code> signals and <code>__str__</code>. If you rely on those signals, loop and call <code>.save()</code>/<code>.delete()</code> individually.</li></ul>"
+        },
+        {
+          "title": "6. values(), exclude(), select_related()",
+          "t": "dj.orm",
+          "html": "<ul><li><code>.values('field1', 'field2')</code> — returns a QuerySet of dicts instead of model instances. Useful for lightweight reads:</li><pre><code>Room.objects.values('name', 'floor')\n# [{'name': 'Conf A', 'floor': 1}, ...]</code></pre><li><code>.exclude(condition)</code> — the opposite of <code>.filter()</code>:</li><pre><code>Room.objects.exclude(floor=1)  # all rooms NOT on floor 1</code></pre><li><code>.select_related('fk_field')</code> — fetches related ForeignKey objects in a single SQL JOIN. Avoids the N+1 query problem.</li><pre><code># Without select_related: 1 query per meeting to fetch room\nmeetings = Meeting.objects.all()  # N+1 queries\n\n# With select_related: 1 query total\nmeetings = Meeting.objects.select_related('room').all()</code></pre><li><span class='r'>Trap:</span> Forgetting <code>select_related</code> when looping over meetings and accessing <code>meeting.room</code> causes one SQL query per row — the N+1 problem.</li></ul>"
+        },
+        {
+          "title": "7. DoesNotExist and get_object_or_404",
+          "t": "dj.orm",
+          "html": "<ul><li><code>Model.DoesNotExist</code> is raised by <code>.get()</code> when no row matches. It's defined on every model automatically.</li><pre><code>try:\n    room = Room.objects.get(pk=99999)\nexcept Room.DoesNotExist:\n    # handle missing room\n    pass</code></pre><li><code>get_object_or_404</code> is the view-layer shortcut: returns the object or raises an Http404 (which renders a 404 page):</li><pre><code>from django.shortcuts import get_object_or_404\n\ndef room_detail(request, pk):\n    room = get_object_or_404(Room, pk=pk)\n    return render(request, 'meetings/detail.html', {'room': room})</code></pre><li>Combining filter + get_object_or_404:</li><pre><code>meeting = get_object_or_404(Meeting, pk=pk, room__floor=1)</code></pre><li><span class='r'>Trap:</span> <code>DoesNotExist</code> is on the model class — it's <code>Room.DoesNotExist</code>, not a global exception. Catching the wrong exception silently ignores it.</li></ul>"
         }
       ]
     }
@@ -1175,6 +1340,246 @@
       "src": "ch6",
       "ls": 2,
       "lab": 6
+    },
+    {
+      "id": "c55",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 0,
+      "lab": 7,
+      "ans": null,
+      "q": "What are the three methods for handling forms in Django?",
+      "code": null,
+      "out": null,
+      "why": "Method 1: raw request.POST — read values directly, no validation class. Method 2: forms.Form — define a form class, use is_valid() and cleaned_data. Method 3: forms.ModelForm — auto-generates fields from a model, form.save() writes to the DB."
+    },
+    {
+      "id": "c56",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 1,
+      "lab": 7,
+      "ans": null,
+      "q": "What does request.POST['firstname'] do, and what is the safer alternative?",
+      "code": "firstname = request.POST['firstname']",
+      "out": null,
+      "why": "request.POST is a dict-like object. ['firstname'] raises KeyError if the field is absent. The safer alternative is request.POST.get('firstname', '') which returns a default if the key is missing."
+    },
+    {
+      "id": "c57",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 2,
+      "lab": 7,
+      "ans": null,
+      "q": "Complete the view: bind the form to POST data, validate, then save.",
+      "code": "form = ContactForm(___(1)___)\nif ___(2)___:\n    data = form.___(3)___\n    Contact.objects.create(**data)\n    return redirect('home')\nreturn render(request, 'contact.html', {'form': form})",
+      "out": "(1) request.POST or None\n(2) form.is_valid()\n(3) cleaned_data",
+      "why": "request.POST or None: on GET the form is unbound (None), on POST it is bound to the submitted data. is_valid() runs validators. cleaned_data is a dict of validated Python values."
+    },
+    {
+      "id": "c58",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 3,
+      "lab": 7,
+      "ans": null,
+      "q": "Write the ModelForm for a Contact model with fields firstname, lastname, email, message.",
+      "code": "class ContactModelForm(forms.ModelForm):\n    class ___:\n        model = ___\n        fields = [___, ___, ___, ___]",
+      "out": "class ContactModelForm(forms.ModelForm):\n    class Meta:\n        model = Contact\n        fields = ['firstname', 'lastname', 'email', 'message']",
+      "why": "ModelForm requires an inner Meta class with model= and fields=. fields can be a list of field names or '__all__'. The form generates input widgets from the model field types automatically."
+    },
+    {
+      "id": "c59",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 3,
+      "lab": 7,
+      "ans": null,
+      "q": "What is the one-line difference between a forms.Form view and a forms.ModelForm view?",
+      "code": null,
+      "out": null,
+      "why": "With forms.Form you must write the save logic yourself: Contact.objects.create(**form.cleaned_data). With forms.ModelForm you just call form.save() and it creates the row for you."
+    },
+    {
+      "id": "c60",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 4,
+      "lab": 7,
+      "ans": null,
+      "q": "What does {{ form.as_p }} render, and what tag must appear before it in the template?",
+      "code": "<form method=\"post\">\n  ___(1)___\n  {{ form.___(2)___ }}\n  <button type=\"submit\">Send</button>\n</form>",
+      "out": "(1) {% csrf_token %}\n(2) as_p",
+      "why": "{% csrf_token %} generates a hidden input with a security token. Without it Django returns 403 Forbidden. form.as_p wraps each field in <p> tags — the simplest way to render a form."
+    },
+    {
+      "id": "c61",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 5,
+      "lab": 7,
+      "ans": null,
+      "q": "Write a clean_date method that rejects past dates.",
+      "code": "import datetime\n\nclass MeetingForm(forms.ModelForm):\n    def clean_date(self):\n        date = self.cleaned_data['date']\n        if date < ___(1)___:\n            raise ___(2)___(\"Date must be in the future.\")\n        return ___(3)___",
+      "out": "(1) datetime.date.today()\n(2) ValidationError\n(3) date",
+      "why": "clean_<field> runs after the field's built-in validation. It must raise ValidationError for invalid data, or return the value for valid data. Forgetting the return makes cleaned_data['date'] become None."
+    },
+    {
+      "id": "c62",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 6,
+      "lab": 7,
+      "ans": null,
+      "q": "What is a widget, and how do you change a CharField to render as a Textarea?",
+      "code": "class ContactForm(forms.Form):\n    msg = forms.CharField(widget=___(1)___)",
+      "out": "(1) forms.Textarea",
+      "why": "A widget controls the HTML input element rendered for a field. CharField defaults to TextInput (single line). Passing widget=forms.Textarea makes it a multi-line <textarea> instead."
+    },
+    {
+      "id": "c63",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 2,
+      "lab": 7,
+      "ans": null,
+      "q": "When is it wrong to access form.cleaned_data?",
+      "code": "form = ContactForm(request.POST)\n# BUG: accessing cleaned_data before is_valid()\nname = form.cleaned_data['firstname']",
+      "out": null,
+      "why": "cleaned_data is populated only after is_valid() is called. Accessing it before raises AttributeError: 'ContactForm' object has no attribute 'cleaned_data'. Always call is_valid() first and check it returns True."
+    },
+    {
+      "id": "c64",
+      "t": "dj.forms",
+      "src": "ch7",
+      "ls": 1,
+      "lab": 7,
+      "ans": null,
+      "q": "What HTTP method must the HTML <form> tag use for POST data, and why?",
+      "code": "<form ___(1)___=\"post\">\n  {% csrf_token %}\n  ...\n</form>",
+      "out": "(1) method",
+      "why": "Without method=\"post\", the browser defaults to GET. GET sends data in the URL query string (visible, no body). request.POST will be empty and the view logic won't run. POST sends data in the request body, which is required for creates/updates."
+    },
+    {
+      "id": "c65",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 0,
+      "lab": 8,
+      "ans": null,
+      "q": "What is a QuerySet, and when does it hit the database?",
+      "code": null,
+      "out": null,
+      "why": "A QuerySet is a lazy collection of model instances. It is built up in Python without touching the database. The SQL query runs only when you evaluate the QuerySet: iterate over it, convert to list, call len(), use a boolean check, or slice it."
+    },
+    {
+      "id": "c66",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 1,
+      "lab": 8,
+      "ans": null,
+      "q": "What is the difference between filter() and get()?",
+      "code": "# A\nrooms = Room.objects.filter(floor=1)\n# B\nroom  = Room.objects.get(pk=1)",
+      "out": null,
+      "why": "filter() always returns a QuerySet (possibly empty). get() returns exactly one object — it raises DoesNotExist if nothing matches, and MultipleObjectsReturned if more than one matches. Use get() only when you are certain exactly one row exists."
+    },
+    {
+      "id": "c67",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 2,
+      "lab": 8,
+      "ans": null,
+      "q": "Write a query for all meetings whose title contains 'Django' (case-insensitive).",
+      "code": "meetings = Meeting.objects.filter(___(1)___='django')",
+      "out": "(1) title__icontains",
+      "why": "Field lookups use double underscores: field__lookup=value. __icontains maps to SQL LIKE '%django%' with no case sensitivity. __contains is case-sensitive."
+    },
+    {
+      "id": "c68",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 3,
+      "lab": 8,
+      "ans": null,
+      "q": "Get the first 5 rooms ordered by name descending.",
+      "code": "rooms = Room.objects.order_by(___(1)___)___(2)___",
+      "out": "(1) '-name'\n(2) [:5]",
+      "why": "order_by('-name') sorts Z→A (descending prefix is -). [:5] is Python slice syntax which Django translates to SQL LIMIT 5."
+    },
+    {
+      "id": "c69",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 4,
+      "lab": 8,
+      "ans": null,
+      "q": "Create a Room and then update its name. Show both save styles.",
+      "code": "# create\nr = Room.objects.___(1)___(name='Lab', floor=2, room_number=201)\n\n# update\nr.___(2)___ = 'Main Lab'\nr.___(3)___()",
+      "out": "(1) create\n(2) name\n(3) save",
+      "why": "objects.create() is shorthand for Room(...).save(). To update, modify the attribute then call .save() — this runs UPDATE WHERE pk=... on the database."
+    },
+    {
+      "id": "c70",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 4,
+      "lab": 8,
+      "ans": null,
+      "q": "Delete all rooms on floor 99 in a single database query.",
+      "code": "Room.objects.___(1)___(floor=99).___(2)___()",
+      "out": "(1) filter\n(2) delete",
+      "why": "filter().delete() issues a single DELETE FROM WHERE SQL statement. It's faster than fetching each row and calling .delete() individually, but it bypasses model delete() signals."
+    },
+    {
+      "id": "c71",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 5,
+      "lab": 8,
+      "ans": null,
+      "q": "What does .values('name', 'floor') return instead of a normal QuerySet?",
+      "code": "result = Room.objects.values('name', 'floor')[:2]\n# result = ___",
+      "out": "result = [{'name': 'Conference A', 'floor': 1}, {'name': 'Conf A', 'floor': 1}]",
+      "why": ".values() returns a QuerySet of dicts, not model instances. Each dict contains only the requested fields. This is lighter than loading full objects when you only need a few columns."
+    },
+    {
+      "id": "c72",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 5,
+      "lab": 8,
+      "ans": null,
+      "q": "What problem does select_related() solve, and when should you use it?",
+      "code": "# BAD — N+1 queries\nfor m in Meeting.objects.all():\n    print(m.room.name)   # 1 query per row!\n\n# GOOD — 1 query\nfor m in Meeting.objects.___(1)___('room').all():\n    print(m.room.name)",
+      "out": "(1) select_related",
+      "why": "Without select_related, accessing m.room triggers a new SQL query for every meeting row (N+1 problem). select_related('room') fetches meetings and rooms in a single JOIN query."
+    },
+    {
+      "id": "c73",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 6,
+      "lab": 8,
+      "ans": null,
+      "q": "What is Room.DoesNotExist and when is it raised?",
+      "code": "try:\n    r = Room.objects.get(pk=99999)\nexcept ___(1)___:\n    print('not found')",
+      "out": "(1) Room.DoesNotExist",
+      "why": "Every Django model gets a DoesNotExist exception class automatically. It is raised by .get() when no row matches the lookup. It's a subclass of ObjectDoesNotExist. Catch it as Room.DoesNotExist, not a generic Exception."
+    },
+    {
+      "id": "c74",
+      "t": "dj.orm",
+      "src": "ch8",
+      "ls": 6,
+      "lab": 8,
+      "ans": null,
+      "q": "Rewrite this crash-prone view to return a 404 instead of a 500.",
+      "code": "# CRASH: unhandled DoesNotExist\ndef detail(request, pk):\n    room = Room.objects.get(pk=pk)\n    return render(request, 'detail.html', {'room': room})",
+      "out": "from django.shortcuts import get_object_or_404, render\n\ndef detail(request, pk):\n    room = get_object_or_404(Room, pk=pk)\n    return render(request, 'detail.html', {'room': room})",
+      "why": "get_object_or_404(Room, pk=pk) calls .get() internally and catches DoesNotExist, raising Http404 instead, which Django renders as a proper 404 page rather than a 500 server error."
     }
   ],
   "mcq": [
@@ -1892,6 +2297,266 @@
         "It raises NoReverseMatch if meeting.id is not in the URL"
       ],
       "why": "<code>{% url 'name' arg %}</code> calls Django's reverse() to build the URL from the named pattern. It generates <code>/meetings/5/</code>. If the name doesn't exist → <code>NoReverseMatch</code>. Verified: <code>reverse('detail', args=[5])</code> → <code>/meetings/5/</code>."
+    },
+    {
+      "id": "q55",
+      "t": "dj.forms",
+      "q": "What does form.is_valid() do?",
+      "code": null,
+      "ok": "Runs all field validators and populates form.cleaned_data if everything passes",
+      "bad": [
+        "Saves the form data to the database",
+        "Returns the raw POST data as a dict",
+        "Renders the form as HTML"
+      ],
+      "why": "is_valid() triggers validation on every field. If all fields pass, it returns True and sets form.cleaned_data. It never touches the database — that is form.save() (ModelForm only)."
+    },
+    {
+      "id": "q56",
+      "t": "dj.forms",
+      "q": "You submit a POST form and get HTTP 403 Forbidden. What is the most likely cause?",
+      "code": "<form method=\"post\">\n  {{ form.as_p }}\n  <button>Submit</button>\n</form>",
+      "ok": "Missing {% csrf_token %} inside the form",
+      "bad": [
+        "Missing method=\"post\" on the form tag",
+        "The view is not decorated with @login_required",
+        "form.is_valid() returned False"
+      ],
+      "why": "Django's CSRF middleware rejects POST requests that don't carry a matching CSRF token. Adding {% csrf_token %} inside the <form> tag generates a hidden input that satisfies the middleware."
+    },
+    {
+      "id": "q57",
+      "t": "dj.forms",
+      "q": "What is the difference between forms.Form and forms.ModelForm?",
+      "code": null,
+      "ok": "ModelForm auto-generates fields from a model and provides form.save() to write to the DB; forms.Form requires manual field definitions and manual save logic",
+      "bad": [
+        "forms.Form supports validation, ModelForm does not",
+        "ModelForm cannot render with as_p(); forms.Form can",
+        "They are identical — ModelForm is just an alias for forms.Form"
+      ],
+      "why": "ModelForm reads the model's field definitions and creates matching form fields automatically. It also provides .save() which handles both INSERT and UPDATE. forms.Form has no model — you define all fields manually and write your own save logic."
+    },
+    {
+      "id": "q58",
+      "t": "dj.forms",
+      "q": "When is form.cleaned_data populated?",
+      "code": "form = ContactForm(request.POST)\n# at this point, is cleaned_data available?",
+      "ok": "Only after form.is_valid() is called and returns True",
+      "bad": [
+        "As soon as the form is instantiated with POST data",
+        "After calling form.save()",
+        "After calling render(request, template, {'form': form})"
+      ],
+      "why": "cleaned_data does not exist until is_valid() runs. Accessing it before is_valid() raises AttributeError. After is_valid() returns True, cleaned_data contains validated, converted Python values."
+    },
+    {
+      "id": "q59",
+      "t": "dj.forms",
+      "q": "Which render helper wraps each field in <p> tags?",
+      "code": "{{ form.___ }}",
+      "ok": "as_p",
+      "bad": [
+        "as_table",
+        "as_ul",
+        "as_div"
+      ],
+      "why": "form.as_p() wraps each field in <p> tags. form.as_table() uses <tr> tags (needs outer <table>). form.as_ul() uses <li> tags (needs outer <ul>). as_div() does not exist in standard Django."
+    },
+    {
+      "id": "q60",
+      "t": "dj.forms",
+      "q": "You define clean_date() but forget the return statement. What happens?",
+      "code": "def clean_date(self):\n    date = self.cleaned_data['date']\n    if date < datetime.date.today():\n        raise ValidationError(\"Past date\")\n    # forgot: return date",
+      "ok": "cleaned_data['date'] becomes None, silently breaking downstream code",
+      "bad": [
+        "Django raises a RuntimeError about missing return",
+        "The form becomes invalid automatically",
+        "Nothing — Django uses the original value from request.POST"
+      ],
+      "why": "Python functions that fall off the end return None. cleaned_data['date'] will be None after is_valid(), which looks like a valid result. This is a silent bug — no exception is raised."
+    },
+    {
+      "id": "q61",
+      "t": "dj.forms",
+      "q": "What does ContactModelForm(request.POST or None) pass as the first argument on a GET request?",
+      "code": "form = ContactModelForm(request.POST or None)",
+      "ok": "None — the form is unbound (no data), so it renders empty without validation errors",
+      "bad": [
+        "An empty QueryDict",
+        "request.GET",
+        "An empty dict {}"
+      ],
+      "why": "On a GET request, request.POST is an empty QueryDict which is falsy. 'request.POST or None' evaluates to None. Passing None to a form creates an unbound form — it renders with blank fields and won't validate."
+    },
+    {
+      "id": "q62",
+      "t": "dj.forms",
+      "q": "Which widget turns a CharField into a multi-line textarea?",
+      "code": "msg = forms.CharField(widget=___.___)",
+      "ok": "forms.Textarea",
+      "bad": [
+        "forms.TextArea",
+        "forms.MultilineInput",
+        "forms.LargeTextInput"
+      ],
+      "why": "The correct widget class is forms.Textarea (capital T, lowercase area). There is no TextArea, MultilineInput, or LargeTextInput in Django's forms module."
+    },
+    {
+      "id": "q63",
+      "t": "dj.forms",
+      "q": "In a ModelForm, what does fields = '__all__' mean?",
+      "code": "class Meta:\n    model = Contact\n    fields = '__all__'",
+      "ok": "Include every field from the model in the form",
+      "bad": [
+        "Exclude all fields — the form will be empty",
+        "Use only fields that have blank=True on the model",
+        "It is a syntax error — fields must be a list"
+      ],
+      "why": "'__all__' is a special string that tells ModelForm to include every field defined on the model. It is valid syntax. Using it in production is risky because new model fields are automatically included in the form."
+    },
+    {
+      "id": "q64",
+      "t": "dj.forms",
+      "q": "What is the purpose of the name attribute on an HTML input?",
+      "code": "<input type=\"text\" name=\"firstname\">",
+      "ok": "It becomes the key in request.POST — e.g. request.POST['firstname']",
+      "bad": [
+        "It is used as the HTML id for CSS styling",
+        "It sets the default value of the input",
+        "It is required for {% csrf_token %} to work"
+      ],
+      "why": "The browser sends form data as key=value pairs. The name attribute is the key. Without it, the field value is never submitted. request.POST['firstname'] only works if the input has name='firstname'."
+    },
+    {
+      "id": "q65",
+      "t": "dj.orm",
+      "q": "When does a QuerySet actually query the database?",
+      "code": "qs = Room.objects.filter(floor=1).order_by('name')",
+      "ok": "When the QuerySet is evaluated — iterated, sliced, converted to list, or used in a boolean test",
+      "bad": [
+        "Immediately when filter() is called",
+        "When order_by() is called",
+        "When the view function returns"
+      ],
+      "why": "QuerySets are lazy. filter() and order_by() just build a query description. The SQL runs only when Python needs the actual data: iterating with for, calling list(), len(), bool(), or slicing."
+    },
+    {
+      "id": "q66",
+      "t": "dj.orm",
+      "q": "Room.objects.get(pk=99999) raises which exception?",
+      "code": null,
+      "ok": "Room.DoesNotExist",
+      "bad": [
+        "ObjectNotFound",
+        "Http404",
+        "KeyError"
+      ],
+      "why": "Every model has a DoesNotExist exception automatically. get() raises it when no matching row is found. Http404 is different — it is raised by get_object_or_404() (the view helper), not by .get() directly."
+    },
+    {
+      "id": "q67",
+      "t": "dj.orm",
+      "q": "Which lookup finds rooms where the name contains 'conf' regardless of case?",
+      "code": "Room.objects.filter(name___='conf')",
+      "ok": "__icontains",
+      "bad": [
+        "__contains",
+        "__iexact",
+        "__startswith"
+      ],
+      "why": "__icontains maps to SQL LIKE '%conf%' with case-insensitive comparison. __contains is case-sensitive. __iexact is case-insensitive but requires an exact match, not a substring."
+    },
+    {
+      "id": "q68",
+      "t": "dj.orm",
+      "q": "How do you get the count of rooms without loading all rows into memory?",
+      "code": "n = Room.objects.___",
+      "ok": "count()",
+      "bad": [
+        "len(Room.objects.all())",
+        "Room.objects.all().length",
+        "size(Room.objects.all())"
+      ],
+      "why": ".count() issues SELECT COUNT(*) — a single lightweight SQL call. len(queryset) forces evaluation of the entire queryset and loads all rows into memory before counting. For large tables this is a significant performance difference."
+    },
+    {
+      "id": "q69",
+      "t": "dj.orm",
+      "q": "What does Room.objects.all()[:5] generate in SQL?",
+      "code": null,
+      "ok": "SELECT ... FROM meetings_room LIMIT 5",
+      "bad": [
+        "SELECT TOP 5 ... FROM meetings_room",
+        "SELECT ... FROM meetings_room WHERE rownum <= 5",
+        "It raises an error — QuerySets don't support slicing"
+      ],
+      "why": "Python slice notation on a QuerySet maps directly to SQL LIMIT/OFFSET. [:5] becomes LIMIT 5. [2:7] becomes LIMIT 5 OFFSET 2. Negative slicing is not supported."
+    },
+    {
+      "id": "q70",
+      "t": "dj.orm",
+      "q": "What is the N+1 query problem?",
+      "code": "for m in Meeting.objects.all():\n    print(m.room.name)  # extra query each time",
+      "ok": "Accessing a ForeignKey attribute in a loop triggers one SQL query per row, so N meetings cause N+1 total queries",
+      "bad": [
+        "Calling filter() more than once on a QuerySet",
+        "Using order_by() with more than one field",
+        "Calling .save() without changing any field"
+      ],
+      "why": "The first query loads all meetings (1 query). Then each m.room access hits the database again for that room (N queries). Total: N+1. Fix: Meeting.objects.select_related('room').all() fetches everything in one JOIN."
+    },
+    {
+      "id": "q71",
+      "t": "dj.orm",
+      "q": "What does .exclude(floor=1) return?",
+      "code": "Room.objects.exclude(floor=1)",
+      "ok": "All rooms where floor is NOT 1",
+      "bad": [
+        "Only the room on floor 1",
+        "All rooms, with floor=1 rooms hidden from the template",
+        "An error — exclude() is not a valid QuerySet method"
+      ],
+      "why": ".exclude() is the opposite of .filter(). It returns all rows that do NOT match the given condition. It maps to SQL WHERE NOT (floor = 1)."
+    },
+    {
+      "id": "q72",
+      "t": "dj.orm",
+      "q": "What does .values('name', 'floor') return?",
+      "code": "result = Room.objects.values('name', 'floor')",
+      "ok": "A QuerySet of dicts: [{'name': 'Conf A', 'floor': 1}, ...]",
+      "bad": [
+        "A list of tuples: [('Conf A', 1), ...]",
+        "A QuerySet of Room model instances with only those two fields",
+        "A single dict of all rooms keyed by name"
+      ],
+      "why": ".values() returns dictionaries, not model instances. Each dict contains only the requested fields. This avoids constructing full model objects, making it faster when you only need raw data."
+    },
+    {
+      "id": "q73",
+      "t": "dj.orm",
+      "q": "Which ORM method bypasses model .delete() signals when removing rows?",
+      "code": "Room.objects.filter(floor=99).delete()",
+      "ok": "QuerySet .delete() — bulk delete at the SQL level, skipping per-object signals",
+      "bad": [
+        "room.delete() on a single instance",
+        "Room.objects.remove(floor=99)",
+        "Both QuerySet .delete() and instance .delete() skip signals"
+      ],
+      "why": "QuerySet.delete() runs DELETE SQL directly without loading objects, so pre_delete and post_delete signals are not fired per object. Instance .delete() does fire signals. Use bulk delete for speed, instance delete when signals matter."
+    },
+    {
+      "id": "q74",
+      "t": "dj.orm",
+      "q": "get_object_or_404(Room, pk=pk) — what does it raise if no Room exists with that pk?",
+      "code": null,
+      "ok": "Http404 — which Django renders as a 404 Not Found page",
+      "bad": [
+        "Room.DoesNotExist",
+        "ObjectDoesNotExist",
+        "Http500"
+      ],
+      "why": "get_object_or_404 catches DoesNotExist internally and re-raises it as Http404. This gives users a clean 404 page instead of a 500 server error. It's the correct tool to use in views when looking up user-supplied IDs."
     }
   ],
   "topics": {
@@ -4164,6 +4829,460 @@
                   "{% for post in all_posts %}"
                 ],
                 "why": "context_object_name overrides the default. Default would be 'post_list'. With context_object_name='posts', you use 'posts'. object_list is an older fallback that also works but is not what you set."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj16",
+      "ch": "ch7",
+      "t": "dj.forms",
+      "title": "Three methods for handling form data — side by side",
+      "steps": [
+        {
+          "say": "Django gives you three ways to handle form submissions. Let's see them on one board so the differences are obvious.",
+          "add": [
+            [
+              "h",
+              "Method 1 — raw request.POST"
+            ],
+            [
+              "code",
+              "def contact_view(request):\n    if request.method == 'POST':\n        firstname = request.POST['firstname']\n        Contact.objects.create(\n            firstname=firstname,\n            lastname=request.POST['lastname'],\n            email=request.POST['email'],\n            message=request.POST['message']\n        )\n        return redirect('home')\n    return render(request, 'contact.html')",
+              {}
+            ],
+            [
+              "sticky",
+              "No validation.\nNo form class.\nManually read every field.",
+              "y"
+            ]
+          ]
+        },
+        {
+          "say": "Method 2 adds a form class with field definitions and validation through is_valid().",
+          "add": [
+            [
+              "h",
+              "Method 2 — forms.Form"
+            ],
+            [
+              "code",
+              "# forms.py\nclass ContactForm(forms.Form):\n    firstname = forms.CharField(max_length=10)\n    email     = forms.EmailField()\n    msg       = forms.CharField(widget=forms.Textarea)\n\n# views.py\ndef contact_view(request):\n    form = ContactForm(request.POST or None)\n    if form.is_valid():\n        data = form.cleaned_data\n        Contact.objects.create(**data)\n        return redirect('home')\n    return render(request, 'contact.html', {'form': form})",
+              {}
+            ],
+            [
+              "sticky",
+              "is_valid() runs validators.\ncleaned_data = safe Python values.\nStill write save logic yourself.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "Method 3 — ModelForm — generates the fields from the model and provides form.save() to write to the DB in one call.",
+          "add": [
+            [
+              "h",
+              "Method 3 — forms.ModelForm"
+            ],
+            [
+              "code",
+              "# forms.py\nclass ContactModelForm(forms.ModelForm):\n    class Meta:\n        model = Contact\n        fields = ['firstname', 'lastname', 'email', 'message']\n\n# views.py\ndef contact_view(request):\n    form = ContactModelForm(request.POST or None)\n    if form.is_valid():\n        form.save()          # creates the row\n        return redirect('home')\n    return render(request, 'contact.html', {'form': form})",
+              {}
+            ],
+            [
+              "sticky",
+              "Fields auto-generated from model.\nform.save() = INSERT or UPDATE.\nLeast code for DB-backed forms.",
+              "g"
+            ],
+            [
+              "try",
+              {
+                "q": "Using ModelForm, what single call writes the form data to the database?",
+                "code": null,
+                "ok": "form.save()",
+                "bad": [
+                  "form.cleaned_data.save()",
+                  "Contact.objects.create(**form.cleaned_data)",
+                  "form.commit()"
+                ],
+                "why": "ModelForm.save() handles the INSERT (or UPDATE if you passed instance=). It is the main advantage over forms.Form."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj17",
+      "ch": "ch7",
+      "t": "dj.forms",
+      "title": "Custom validation — clean_date() with ValidationError",
+      "steps": [
+        {
+          "say": "The professor's MeetingForm validates that the date is in the future. This is a common exam question. Let's build it step by step.",
+          "add": [
+            [
+              "h",
+              "The MeetingForm with clean_date()"
+            ],
+            [
+              "code",
+              "import datetime\nfrom django import forms\nfrom django.core.exceptions import ValidationError\nfrom .models import Meeting\n\nclass MeetingForm(forms.ModelForm):\n    class Meta:\n        model = Meeting\n        fields = '__all__'\n        widgets = {\n            'date': forms.SelectDateWidget,\n        }\n\n    def clean_date(self):\n        date = self.cleaned_data['date']\n        if date < datetime.date.today():\n            raise ValidationError(\"Meeting date must be in the future.\")\n        return date",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Three things must be right for clean_date to work correctly. Let's check them one at a time.",
+          "add": [
+            [
+              "h",
+              "Three rules for clean_<field>"
+            ],
+            [
+              "w",
+              "{b:Rule 1} — access self.cleaned_data['date'], not self.data['date'] (raw string)"
+            ],
+            [
+              "w",
+              "{b:Rule 2} — raise ValidationError(...) for invalid data, Django shows it next to the field"
+            ],
+            [
+              "w",
+              "{b:Rule 3} — always return the value at the end, or cleaned_data['date'] becomes None"
+            ],
+            [
+              "sticky",
+              "Forgetting 'return date' at the end\nsilently sets the field to None.\nNo exception — a hidden bug.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "Here is what the verification script confirmed: past date invalid, future date valid.",
+          "add": [
+            [
+              "h",
+              "Verified output"
+            ],
+            [
+              "code",
+              "mf_past = MeetingForm({'title':'T','date':'2020-01-01','start_time':'09:00','duration':1})\nassert not mf_past.is_valid()\nassert 'date' in mf_past.errors\n# → MeetingForm past date invalid: errors=['date'] OK\n\nmf_ok = MeetingForm({'title':'T','date':'2027-06-01','start_time':'09:00','duration':1,'room':room.pk})\nassert mf_ok.is_valid()\n# → MeetingForm future date valid OK",
+              {}
+            ],
+            [
+              "try",
+              {
+                "q": "clean_date() runs but forgets 'return date'. What is the value of form.cleaned_data['date'] after is_valid()?",
+                "code": null,
+                "ok": "None",
+                "bad": [
+                  "The original string from request.POST",
+                  "datetime.date.today()",
+                  "ValidationError is raised automatically"
+                ],
+                "why": "Python returns None when a function falls off the end. cleaned_data['date'] will be None — a silent bug with no exception raised."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj18",
+      "ch": "ch7",
+      "t": "dj.forms",
+      "title": "Exam-style: complete the form view (Method 2 + template)",
+      "steps": [
+        {
+          "say": "This is the exam Part 3 form question. Fill in every blank in the view and template.",
+          "add": [
+            [
+              "h",
+              "Exam blank-fill — view + template"
+            ],
+            [
+              "code",
+              "# forms.py\nclass ContactForm(forms.Form):\n    firstname = forms.CharField(max_length=10)\n    email     = forms.EmailField()\n    msg       = forms.CharField(widget=forms.Textarea)\n\n# views.py\ndef contact(request):\n    form = ContactForm(___(1)___)\n    if ___(2)___:\n        data = form.___(3)___\n        Contact.objects.create(\n            firstname=data['firstname'],\n            email=data['email'],\n            message=data['msg']\n        )\n        return redirect('home')\n    return render(request, 'contact.html', {'form': form})",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Now fill in the template side — the two critical template tags.",
+          "add": [
+            [
+              "h",
+              "Template blanks"
+            ],
+            [
+              "code",
+              "<form method=\"post\">\n  ___(4)___\n  {{ form.___(5)___ }}\n  <button type=\"submit\">Send</button>\n</form>",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Here is the complete solution — every blank explained.",
+          "add": [
+            [
+              "h",
+              "Full solution"
+            ],
+            [
+              "w",
+              "{b:(1) request.POST or None} — None on GET (unbound), POST data on POST (bound)"
+            ],
+            [
+              "w",
+              "{b:(2) form.is_valid()} — runs validators, populates cleaned_data"
+            ],
+            [
+              "w",
+              "{b:(3) cleaned_data} — the dict of validated Python values"
+            ],
+            [
+              "w",
+              "{b:(4) {% csrf_token %}} — required in every POST form or Django returns 403"
+            ],
+            [
+              "w",
+              "{b:(5) as_p} — renders each field wrapped in <p> tags"
+            ],
+            [
+              "sticky",
+              "Exam trap: forgetting {% csrf_token %}\ngives 403 Forbidden, not a form error.\nIt was question 1 on the actual exam.",
+              "p"
+            ],
+            [
+              "try",
+              {
+                "q": "On a GET request, form = ContactForm(request.POST or None) creates a form with what argument?",
+                "code": null,
+                "ok": "None — an unbound form that renders empty",
+                "bad": [
+                  "An empty QueryDict",
+                  "request.GET",
+                  "An empty dict {}"
+                ],
+                "why": "request.POST on a GET request is an empty QueryDict which is falsy. 'request.POST or None' evaluates to None, creating an unbound form with blank fields and no validation errors shown."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj19",
+      "ch": "ch8",
+      "t": "dj.orm",
+      "title": "ORM query toolkit — all the methods you need",
+      "steps": [
+        {
+          "say": "Every ORM query starts from Model.objects. Let's go through every method from the verification run, one group at a time.",
+          "add": [
+            [
+              "h",
+              "Retrieve"
+            ],
+            [
+              "w",
+              "{b:Room.objects.all()} — all rows → QuerySet"
+            ],
+            [
+              "w",
+              "{b:.filter(floor=1)} → rows matching condition"
+            ],
+            [
+              "w",
+              "{b:.get(pk=1)} → exactly one row, raises DoesNotExist if none"
+            ],
+            [
+              "w",
+              "{b:.exclude(floor=1)} → rows NOT matching condition"
+            ],
+            [
+              "w",
+              "{b:.exists()} → True/False (fastest presence check)"
+            ],
+            [
+              "w",
+              "{b:.count()} → integer via SELECT COUNT(*)"
+            ],
+            [
+              "sticky",
+              ".get() raises DoesNotExist if 0 rows,\nMultipleObjectsReturned if 2+.\nIn views: use get_object_or_404 instead.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "Now ordering, slicing, and reshaping results.",
+          "add": [
+            [
+              "h",
+              "Order, slice, reshape"
+            ],
+            [
+              "w",
+              "{b:.order_by('name')} → ascending (A→Z)"
+            ],
+            [
+              "w",
+              "{b:.order_by('-floor')} → descending (prefix -)"
+            ],
+            [
+              "w",
+              "{b:[:3]} → LIMIT 3 (SQL); negative index not allowed"
+            ],
+            [
+              "w",
+              "{b:.values('name','floor')} → QuerySet of dicts, not model instances"
+            ],
+            [
+              "w",
+              "{b:.select_related('room')} → JOIN to fetch FK in same query (avoids N+1)"
+            ],
+            [
+              "code",
+              "# verified output\nRoom.objects.order_by('name')[:3]\n# → ['Conf A', 'Conference A', 'Salle A']\n\nRoom.objects.values('name','floor')[:1]\n# → [{'name': 'Conference A', 'floor': 1}]\n\nMeeting.objects.select_related('room').all().count()\n# → 7 meetings, 1 SQL query",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Finally, create, update, and delete.",
+          "add": [
+            [
+              "h",
+              "Write operations"
+            ],
+            [
+              "w",
+              "{b:Room.objects.create(...)} → INSERT + return new instance"
+            ],
+            [
+              "w",
+              "{b:r.name = 'X'; r.save()} → UPDATE WHERE pk=..."
+            ],
+            [
+              "w",
+              "{b:Room.objects.filter(floor=5).update(floor=4)} → bulk UPDATE in 1 SQL"
+            ],
+            [
+              "w",
+              "{b:r.delete()} → DELETE one row, fires signals"
+            ],
+            [
+              "w",
+              "{b:Room.objects.filter(floor=99).delete()} → bulk DELETE, skips signals"
+            ],
+            [
+              "try",
+              {
+                "q": "What is the difference between Room.objects.count() and len(Room.objects.all())?",
+                "code": null,
+                "ok": "count() runs SELECT COUNT(*) — no rows loaded. len() evaluates the full QuerySet, loading all rows into memory.",
+                "bad": [
+                  "They are identical in performance",
+                  "len() is faster for large tables",
+                  "count() raises an error on empty tables"
+                ],
+                "why": "count() is a single lightweight SQL call. len() forces QuerySet evaluation, fetching every row. For large tables, count() can be thousands of times faster."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj20",
+      "ch": "ch8",
+      "t": "dj.orm",
+      "title": "Exam-style: ORM blank-fill (filter, order_by, get_object_or_404)",
+      "steps": [
+        {
+          "say": "This is the exam Part 3 ORM question. Fill in every blank in the view.",
+          "add": [
+            [
+              "h",
+              "Exam ORM blank-fill"
+            ],
+            [
+              "code",
+              "from django.shortcuts import ___(1)___, render\nfrom .models import Meeting, Room\n\ndef room_list(request):\n    rooms = Room.objects.___(2)___(floor=1).___(3)___('name')\n    return render(request, 'rooms.html', {'rooms': rooms})\n\ndef meeting_detail(request, pk):\n    meeting = ___(4)___(Meeting, pk=pk)\n    return render(request, 'detail.html', {'meeting': meeting})\n\ndef top_rooms(request):\n    rooms = Room.objects.all().___(5)___\n    n = Room.objects.___(6)___()\n    return render(request, 'top.html', {'rooms': rooms, 'n': n})",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Let's fill in each blank with the reasoning.",
+          "add": [
+            [
+              "h",
+              "Blank by blank"
+            ],
+            [
+              "w",
+              "{b:(1) get_object_or_404} — imported from django.shortcuts"
+            ],
+            [
+              "w",
+              "{b:(2) filter} — filter(floor=1) returns all floor-1 rooms"
+            ],
+            [
+              "w",
+              "{b:(3) order_by} — .order_by('name') sorts A→Z"
+            ],
+            [
+              "w",
+              "{b:(4) get_object_or_404} — safe lookup: 404 if pk not found"
+            ],
+            [
+              "w",
+              "{b:(5) [:3]} — slice = LIMIT 3"
+            ],
+            [
+              "w",
+              "{b:(6) count} — count() = SELECT COUNT(*), no rows loaded"
+            ]
+          ]
+        },
+        {
+          "say": "Here is the full solution — the complete exam answer.",
+          "add": [
+            [
+              "h",
+              "Full solution — verified running"
+            ],
+            [
+              "code",
+              "from django.shortcuts import get_object_or_404, render\nfrom .models import Meeting, Room\n\ndef room_list(request):\n    rooms = Room.objects.filter(floor=1).order_by('name')\n    return render(request, 'rooms.html', {'rooms': rooms})\n\ndef meeting_detail(request, pk):\n    meeting = get_object_or_404(Meeting, pk=pk)\n    return render(request, 'detail.html', {'meeting': meeting})\n\ndef top_rooms(request):\n    rooms = Room.objects.all()[:3]\n    n = Room.objects.count()\n    return render(request, 'top.html', {'rooms': rooms, 'n': n})",
+              {
+                "1": "← always import get_object_or_404 from shortcuts",
+                "7": "← get_object_or_404 → Http404 if not found",
+                "14": "← count() not len() — single SQL call"
+              }
+            ],
+            [
+              "sticky",
+              "Exam trap: using Room.objects.get(pk=pk) in a view\ncrashes with 500 if pk not found.\nAlways use get_object_or_404 in views.",
+              "p"
+            ],
+            [
+              "try",
+              {
+                "q": "Room.objects.filter(floor=1).order_by('-name') — in what order are rooms returned?",
+                "code": null,
+                "ok": "Floor-1 rooms sorted by name descending (Z→A)",
+                "bad": [
+                  "All rooms sorted by name descending",
+                  "Floor-1 rooms sorted by name ascending",
+                  "An error — cannot chain filter and order_by"
+                ],
+                "why": "QuerySet methods chain: filter() limits rows, order_by('-name') sorts the result descending. The - prefix means descending."
               }
             ]
           ]
