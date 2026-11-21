@@ -526,17 +526,17 @@ function modal(html, buttons) { // celebrations queue up one at a time; dialogs 
 /* ================= mastery & SRS ================= */
 function record(item, ok) {
   const id = item.id, t = item.t, d = T();
-  const bucket = bucket();
-  const q = bucket.qs[id] ||= { n: 0, ok: 0, box: 0, due: "" };
+  const bk = bucket();
+  const q = bk.qs[id] ||= { n: 0, ok: 0, box: 0, due: "" };
   q.n++; if (ok) { q.ok++; q.box = Math.min(5, q.box + 1); } else q.box = 0;
   q.due = addDays(TODAY(), [0, 1, 2, 4, 7, 14][q.box]); q.last = ok ? 1 : 0;
-  const tp = bucket.topics[t] ||= { n: 0, h: [] };
+  const tp = bk.topics[t] ||= { n: 0, h: [] };
   const before = mastery(t);
   tp.n++; tp.h.push(ok ? 1 : 0); if (tp.h.length > 12) tp.h.shift();
   const after = mastery(t);
   if (before.n >= 5 && before.m < .5 && after.m >= .8) award("comeback");
   d.q++; if (ok) d.ok++; S.totalN++; if (ok) S.totalOk++;
-  bucket.totalN = (bucket.totalN || 0) + 1; if (ok) bucket.totalOk = (bucket.totalOk || 0) + 1;
+  bk.totalN = (bk.totalN || 0) + 1; if (ok) bk.totalOk = (bk.totalOk || 0) + 1;
   // also update global days for streak
   const gd = S.days[TODAY()] ||= { sec: 0, q: 0, ok: 0, quiz: 0, pass: 0 };
   gd.q++; if (ok) gd.ok++;
@@ -547,8 +547,37 @@ function mastery(t) {
   let w = 0, s = 0; tp.h.forEach((v, i) => { const wi = 1 + i * 0.25; w += wi; s += v * wi; });
   return { m: s / w, n: tp.n };
 }
+
+/* ---- chapter helpers: work for any subject, not just PCAP ---- */
+// Which chapter a topic belongs to. PCAP topics start with their chapter id ("oop.mro");
+// other subjects (Django: "dj.views" in chapter "ch2") are mapped from where the topic is used.
+function topicChapter(t) {
+  if (!C || !t) return (t || "").split(".")[0];
+  const ids = C.chapters.map(c => c.id), p = t.split(".")[0];
+  if (ids.includes(p)) return p;
+  if (!C._tch) {
+    const cnt = {};
+    const add = (topic, ch) => { if (!topic || !ids.includes(ch)) return; (cnt[topic] ||= {})[ch] = (cnt[topic][ch] || 0) + 1; };
+    C.chapters.forEach(c => c.lessons.forEach(l => add(l.t, c.id)));
+    (C.boards || []).forEach(b => add(b.t, b.ch));
+    (C.cards || []).forEach(c => add(c.t, c.src));
+    C._tch = Object.fromEntries(Object.entries(cnt).map(([k, v]) => [k, Object.entries(v).sort((a, b) => b[1] - a[1])[0][0]]));
+  }
+  return C._tch[t] || p;
+}
+// Which chapter a flashcard belongs to ("nb4" = PCAP notebook 4, "ch2" = chapter ch2).
+function cardChapter(c) {
+  const ids = C.chapters.map(x => x.id);
+  if (ids.includes(c.src)) return c.src;
+  const m = /^nb(\d+)$/.exec(c.src || ""); if (m) { const ch = C.chapters.find(x => x.num === +m[1]); if (ch) return ch.id; }
+  return topicChapter(c.t);
+}
+const isDeckCard = c => !/^(test|mock)/.test(c.src || "");
+const chList = () => C.chapters.map(c => c.id).filter(id => S.bonus || id !== "bonus");
+const PCAP_SHORT = { mod: "Modules", str: "Strings", exc: "Exceptions", oop: "OOP", misc: "Misc", bonus: "31-04 extras" };
+const chTitle = id => PCAP_SHORT[id] || (C?.chapters.find(c => c.id === id)?.title) || id;
 function chapterMastery(ch) {
-  const ts = Object.keys(C?.topics || {}).filter(t => t.startsWith(ch + "."));
+  const ts = Object.keys(C?.topics || {}).filter(t => topicChapter(t) === ch);
   const extra = bucket().topics[ch]; let w = 0, s = 0, n = 0;
   for (const t of ts) { const m = mastery(t); if (m.m != null) { const wi = Math.min(m.n, 12); w += wi; s += m.m * wi; n += m.n; } }
   if (extra && extra.h.length) { const m = mastery(ch); const wi = Math.min(m.n, 6); w += wi; s += m.m * wi; n += m.n; }
@@ -617,7 +646,7 @@ function syncReadTasks() {
 /* ================= question picking ================= */
 function pool(pick) {
   const chs = pick.chs, ts = pick.ts;
-  return C.mcq.filter(q => (!ts || ts.includes(q.t)) && (!chs || chs.includes(q.t.split(".")[0])) && (S.bonus || !q.t.startsWith("bonus")));
+  return C.mcq.filter(q => (!ts || ts.includes(q.t)) && (!chs || chs.includes(topicChapter(q.t))) && (S.bonus || !q.t.startsWith("bonus")));
 }
 function choose(items, n) {
   const td = TODAY(), b = bucket();
@@ -850,7 +879,7 @@ function vLearn(m) {
 }
 function vChapter(m) {
   const ch = C.chapters.find(c => c.id === sub.ch);
-  const cards = C.cards.filter(c => c.src === "nb" + ch.num);
+  const cards = C.cards.filter(c => cardChapter(c) === ch.id && isDeckCard(c));
   m.innerHTML = `<button class="link" data-back>← all notebooks</button><h1 class="board-h">${esc(ch.title)}</h1>
    <div class="flex" style="margin-bottom:12px"><button class="btn blue" data-q>Quiz this chapter (10)</button><button class="btn" data-cards>Flashcards (${Math.min(15, cards.length)})</button></div>
    ${C.boards.some(b => b.ch === ch.id) ? `<div class="sec">👩‍🏫 Teacher mode</div><div class="tmlist">${C.boards.filter(b => b.ch === ch.id).map((b, i) => `<button class="${bucket().boards[b.id] ? "done" : ""}" data-board="${b.id}"><span class="num">${bucket().boards[b.id] ? "✓" : i + 1}</span><span>${esc(b.title)}<br><span class="small muted">${b.steps.length} steps</span></span></button>`).join("")}</div><div class="sec">📓 Notebook pages</div>` : ""}
@@ -890,7 +919,7 @@ function vLesson(m) {
   const nx = m.querySelector("[data-next]"); if (nx) nx.onclick = () => go("learn", { ch: ch.id, lesson: i + 1, mission: sub.mission });
   const tr = m.querySelector("[data-try]"); if (tr) tr.onclick = () => startCards(null, mine.length, null, mine, L.title);
 }
-function cardsForLesson(ch, i) { return C.cards.filter(c => c.src === "nb" + ch.num && c.ls === i); }
+function cardsForLesson(ch, i) { return C.cards.filter(c => cardChapter(c) === ch.id && isDeckCard(c) && c.ls === i); }
 
 /* ================= teacher mode (whiteboard lessons) ================= */
 let TTS = null;
@@ -961,7 +990,7 @@ function vBoard(m) {
     const local = anim ? tl : { t: 0 };
     inner += `<div class="${anim ? "anim" : ""}" data-step="${si}" style="display:flex;flex-direction:column;gap:14px;min-width:0">` + st.add.map((el, ei) => boardEl(el, `${B.id}-${si}-${ei}`, local, TM.tries)).join("") + `</div>`;
   });
-  m.innerHTML = `<div class="tm"><div class="tm-top"><button class="link" data-back>← ${esc(chName(B.ch))}</button><h2>${idx + 1}. ${esc(B.title)}</h2>
+  m.innerHTML = `<div class="tm"><div class="tm-top"><button class="link" data-back>← ${esc(chTitle(B.ch))}</button><h2>${idx + 1}. ${esc(B.title)}</h2>
     ${TTS ? `<button class="voice ${S.voice ? "on" : ""}" data-voice aria-pressed="${!!S.voice}">${S.voice ? "🔊 Voice on" : "🔈 Voice off"}</button>` : ""}
     <div class="dots" aria-label="Step ${k + 1} of ${B.steps.length}">${B.steps.map((_, i) => `<i class="${i < k ? "on" : i === k ? "cur" : ""}"></i>`).join("")}</div></div>
     <div class="wb" id="wb">${inner}</div></div>
@@ -1004,12 +1033,12 @@ function vPractice(m) {
     <div class="sticky g tape tilt2"><h3>🔁 Redo mistakes</h3><p class="small">${due} question${due === 1 ? "" : "s"} you got wrong, until you get them right.</p><button class="btn go big" data-act="review" ${due ? "" : "disabled"}>Redo</button></div>
     <div class="sticky tape"><h3>🎓 Mock exam</h3><p class="small">40 questions · 65 minutes · no feedback until the end · pass at 70%.</p><button class="btn big" data-act="mock">Start mock</button></div>
   </div>
-  <div class="sec">By chapter</div><div class="flex">${["oop", "misc", "str", "exc", "mod", "bonus"].filter(c => S.bonus || c !== "bonus").map(c => `<button class="btn" data-chq="${c}">${NAMES[c]}</button>`).join("")}</div>
+  <div class="sec">By chapter</div><div class="flex">${chList().map(c => `<button class="btn" data-chq="${c}">${esc(chTitle(c))}</button>`).join("")}</div>
   <div class="sec">Notebook flashcards <span class="small muted">(THEY ASK → you answer, then grade yourself)</span></div>
-  <div class="flex">${["oop", "misc", "str", "exc", "mod"].map(c => `<button class="btn ghost" data-fc="${c}">${NAMES[c]}</button>`).join("")}<button class="btn ghost" data-fc="all">Mix of all</button></div>`;
+  <div class="flex">${chList().filter(c => c !== "bonus" && C.cards.some(x => cardChapter(x) === c && isDeckCard(x))).map(c => `<button class="btn ghost" data-fc="${c}">${esc(chTitle(c))}</button>`).join("")}<button class="btn ghost" data-fc="all">Mix of all</button></div>`;
   bindActs(m);
-  m.querySelectorAll("[data-chq]").forEach(b => b.onclick = () => startQuiz(choose(pool({ chs: [b.dataset.chq] }), 10), { title: NAMES[b.dataset.chq] }));
-  m.querySelectorAll("[data-fc]").forEach(b => b.onclick = () => startCards(b.dataset.fc === "all" ? ["mod", "str", "exc", "oop", "misc"] : [b.dataset.fc], 15));
+  m.querySelectorAll("[data-chq]").forEach(b => b.onclick = () => startQuiz(choose(pool({ chs: [b.dataset.chq] }), 10), { title: chTitle(b.dataset.chq) }));
+  m.querySelectorAll("[data-fc]").forEach(b => b.onclick = () => startCards(b.dataset.fc === "all" ? chList().filter(c => c !== "bonus") : [b.dataset.fc], 15));
 }
 function startWeak(n, mission, pass) {
   const w = weakestTopics(4).map(x => x.t);
@@ -1034,7 +1063,7 @@ function startMock(mission) {
   render(); scrollTo(0, 0);
 }
 function startCards(chs, n, mission, list, title) {
-  let items = list || shuffle(C.cards.filter(c => chs.includes(c.t.split(".")[0]) && c.src.startsWith("nb"))).slice(0, n);
+  let items = list || shuffle(C.cards.filter(c => chs.includes(cardChapter(c)) && isDeckCard(c))).slice(0, n);
   quiz = { kind: "cards", items: items.map(q => ({ q })), i: 0, ans: [], shown: false, title: title || "Flashcards", mission, xp: 0 };
   render(); scrollTo(0, 0);
 }
@@ -1098,7 +1127,7 @@ function answer(k, el) {
 function finish() {
   const Q = quiz; clearInterval(timerInt);
   let ok = 0, n = Q.items.length; const by = {};
-  Q.items.forEach((it, k) => { const c = it.q.t.split(".")[0]; by[c] ||= [0, 0]; by[c][1]++;
+  Q.items.forEach((it, k) => { const c = topicChapter(it.q.t); by[c] ||= [0, 0]; by[c][1]++;
     const good = Q.kind === "cards" ? Q.ans[k] === 1 : Q.ans[k] != null && it.opts[Q.ans[k]] === it.q.ok;
     if (good) { ok++; by[c][0]++; }
     if (Q.kind === "mock") record(it.q, good);
@@ -1127,7 +1156,7 @@ function renderResult(m) {
     <div class="bigscore">${R.ok}/${R.n}</div><div class="muted">${Math.round(R.pct * 100)}%${Q.kind === "mock" ? (pass ? " · PASS ✓" : " · below the 70% pass line") : ""}</div>
     <p style="font-family:var(--f-marker);color:var(--purple);font-size:22px">+${(Q.xp || 0) + Q.bonus} XP</p>
     ${Q.missionOk ? `<p class="mk-green">✓ Mission step complete</p>` : Q.mission ? `<p class="mk-red">Need ${Math.round((MISSIONS()[Q.mission.mi].tasks[Q.mission.ti].pass || .6) * 100)}% to tick this mission step. Try again!</p>` : ""}
-    ${Q.kind === "mock" ? `<div class="tbl"><table style="border-collapse:collapse;width:100%"><tr><th style="font-family:var(--f-marker);font-weight:normal;background:var(--blue);color:var(--paper);padding:4px 8px;text-align:left">Section</th><th style="font-family:var(--f-marker);font-weight:normal;background:var(--blue);color:var(--paper);padding:4px 8px">Score</th></tr>${Object.entries(R.by).map(([c, [a, b]]) => `<tr><td style="padding:4px 8px;border:1.5px solid var(--grid);text-align:left">${NAMES[c]}</td><td style="padding:4px 8px;border:1.5px solid var(--grid)">${a}/${b} (${Math.round(a / b * 100)}%)</td></tr>`).join("")}</table></div>` : ""}
+    ${Q.kind === "mock" ? `<div class="tbl"><table style="border-collapse:collapse;width:100%"><tr><th style="font-family:var(--f-marker);font-weight:normal;background:var(--blue);color:var(--paper);padding:4px 8px;text-align:left">Section</th><th style="font-family:var(--f-marker);font-weight:normal;background:var(--blue);color:var(--paper);padding:4px 8px">Score</th></tr>${Object.entries(R.by).map(([c, [a, b]]) => `<tr><td style="padding:4px 8px;border:1.5px solid var(--grid);text-align:left">${chTitle(c)}</td><td style="padding:4px 8px;border:1.5px solid var(--grid)">${a}/${b} (${Math.round(a / b * 100)}%)</td></tr>`).join("")}</table></div>` : ""}
     <div class="flex" style="justify-content:center;margin-top:14px">
       ${missed.length && Q.kind !== "cards" ? `<button class="btn red" data-redo>Redo my ${missed.length} mistake${missed.length > 1 ? "s" : ""}</button>` : ""}
       ${Q.kind === "mock" ? `<button class="btn" data-review>See all answers</button>` : ""}
@@ -1147,15 +1176,14 @@ function vWeak(m) {
   html += w.length ? `<div class="row" style="margin:10px 0 6px">${w.map((x, i) => `<div class="sticky p ${i % 2 ? "tilt" : "tilt2"}"><div class="small muted">Weak spot #${i + 1}</div><h3>${esc(C.topics[x.t])}</h3><p class="small">${Math.round(x.m * 100)}% on your recent answers</p><div class="flex"><button class="btn red" data-dt="${x.t}">Drill 8</button><button class="btn ghost" data-lt="${x.t}">Read lesson</button></div></div>`).join("")}</div>`
     : `<div class="sticky b tape" style="max-width:520px">Your weak spots appear here after a few quizzes. Start with the diagnostic on the Today tab.</div>`;
   if (due.length) html += `<p><button class="btn go" data-act="review">🔁 Redo ${due.length} missed question${due.length > 1 ? "s" : ""}</button></p>`;
-  for (const ch of ["oop", "misc", "str", "exc", "mod", "bonus"]) {
-    if (ch === "bonus" && !S.bonus) continue;
+  for (const ch of chList()) {
     const cm = chapterMastery(ch);
-    html += `<div class="sec">${NAMES[ch]} ${cm.m != null ? `<span class="small muted">· ${Math.round(cm.m * 100)}%</span>` : ""}</div><div class="heat">` +
-      Object.keys(C.topics).filter(t => t.startsWith(ch + ".")).map(t => { const x = mastery(t); return `<button class="cell m${level(x.m)}" data-dt="${t}" title="Drill this topic"><span class="small">${esc(C.topics[t])}</span><b>${x.m == null ? "–" : Math.round(x.m * 100) + "%"}</b><span class="small muted">${x.n} answered</span></button>`; }).join("") + `</div>`;
+    html += `<div class="sec">${chTitle(ch)} ${cm.m != null ? `<span class="small muted">· ${Math.round(cm.m * 100)}%</span>` : ""}</div><div class="heat">` +
+      Object.keys(C.topics).filter(t => topicChapter(t) === ch).map(t => { const x = mastery(t); return `<button class="cell m${level(x.m)}" data-dt="${t}" title="Drill this topic"><span class="small">${esc(C.topics[t])}</span><b>${x.m == null ? "–" : Math.round(x.m * 100) + "%"}</b><span class="small muted">${x.n} answered</span></button>`; }).join("") + `</div>`;
   }
   m.innerHTML = html; bindActs(m);
   m.querySelectorAll("[data-dt]").forEach(b => b.onclick = () => startQuiz(choose(pool({ ts: [b.dataset.dt] }), 8), { title: C.topics[b.dataset.dt] }));
-  m.querySelectorAll("[data-lt]").forEach(b => b.onclick = () => { const t = b.dataset.lt, bd = C.boards.find(x => x.t === t); if (bd) return openBoard(bd.id); const ch = C.chapters.find(c => c.id === t.split(".")[0]); const i = ch.lessons.findIndex(l => l.t === t); go("learn", { ch: ch.id, lesson: Math.max(0, i) }); });
+  m.querySelectorAll("[data-lt]").forEach(b => b.onclick = () => { const t = b.dataset.lt, bd = C.boards.find(x => x.t === t); if (bd) return openBoard(bd.id); const ch = C.chapters.find(c => c.id === topicChapter(t)); const i = ch.lessons.findIndex(l => l.t === t); go("learn", { ch: ch.id, lesson: Math.max(0, i) }); });
 }
 
 /* ---- Code lab (Brython, loaded on first use) ---- */
