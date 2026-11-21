@@ -350,6 +350,87 @@
           "n": 20
         }
       ]
+    },
+    {
+      "title": "Class-Based Views — full CRUD",
+      "sub": "ListView, DetailView, CreateView, UpdateView, DeleteView, LoginRequiredMixin",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read the 7 lessons",
+          "ch": "ch9",
+          "from": 0,
+          "to": 6
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: 3 boards",
+          "ids": [
+            "dj21",
+            "dj22",
+            "dj23"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 10 questions",
+          "pick": {
+            "ts": [
+              "dj.cbv"
+            ]
+          },
+          "n": 10,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: CBV exercises",
+          "chs": [
+            "ch9"
+          ],
+          "n": 20
+        }
+      ]
+    },
+    {
+      "title": "Authentication — login, signup, permissions",
+      "sub": "User model, authenticate, login, logout, UserCreationForm, @login_required",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read the 7 lessons",
+          "ch": "ch10",
+          "from": 0,
+          "to": 6
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: 2 boards",
+          "ids": [
+            "dj24",
+            "dj25"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 10 questions",
+          "pick": {
+            "ts": [
+              "dj.auth"
+            ]
+          },
+          "n": 10,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: auth exercises",
+          "chs": [
+            "ch10"
+          ],
+          "n": 20
+        }
+      ]
     }
   ],
   "chapters": [
@@ -676,6 +757,90 @@
           "title": "7. DoesNotExist and get_object_or_404",
           "t": "dj.orm",
           "html": "<ul><li><code>Model.DoesNotExist</code> is raised by <code>.get()</code> when no row matches. It's defined on every model automatically.</li><pre><code>try:\n    room = Room.objects.get(pk=99999)\nexcept Room.DoesNotExist:\n    # handle missing room\n    pass</code></pre><li><code>get_object_or_404</code> is the view-layer shortcut: returns the object or raises an Http404 (which renders a 404 page):</li><pre><code>from django.shortcuts import get_object_or_404\n\ndef room_detail(request, pk):\n    room = get_object_or_404(Room, pk=pk)\n    return render(request, 'meetings/detail.html', {'room': room})</code></pre><li>Combining filter + get_object_or_404:</li><pre><code>meeting = get_object_or_404(Meeting, pk=pk, room__floor=1)</code></pre><li><span class='r'>Trap:</span> <code>DoesNotExist</code> is on the model class — it's <code>Room.DoesNotExist</code>, not a global exception. Catching the wrong exception silently ignores it.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch9",
+      "num": 9,
+      "title": "Class-Based Views — ListView, CreateView, UpdateView, DeleteView",
+      "lessons": [
+        {
+          "title": "1. What are Class-Based Views?",
+          "t": "dj.cbv",
+          "html": "<ul><li>A <b>Class-Based View (CBV)</b> is a view written as a Python class instead of a function. Django provides built-in generic CBVs that handle the most common patterns (list, detail, create, update, delete) with almost no code.</li><li>Function-based view (FBV) vs Class-Based View (CBV):<pre><code># FBV\ndef post_list(request):\n    posts = BlogPost.objects.all()\n    return render(request, 'blog/list.html', {'posts': posts})\n\n# CBV — same result\nclass PostListView(ListView):\n    model = BlogPost\n    template_name = 'blog/list.html'\n    context_object_name = 'posts'</code></pre></li><li>CBVs are wired into <code>urls.py</code> using <code>.as_view()</code>:<pre><code>path('posts/', PostListView.as_view(), name='post-list')</code></pre></li><li><span class='r'>Trap:</span> Forgetting <code>.as_view()</code> in <code>urls.py</code> passes the class itself, not a callable view — Django raises a <code>TypeError</code> at runtime.</li></ul>"
+        },
+        {
+          "title": "2. ListView",
+          "t": "dj.cbv",
+          "html": "<ul><li><code>ListView</code> fetches all rows of a model and passes them to a template.</li><pre><code>from django.views.generic import ListView\nfrom .models import BlogPost\n\nclass PostListView(ListView):\n    model = BlogPost\n    template_name = 'blog/post_list.html'\n    context_object_name = 'posts'</code></pre><li><b>Default template:</b> if you omit <code>template_name</code>, Django looks for <code>&lt;app&gt;/&lt;model&gt;_list.html</code> — e.g. <code>blog/blogpost_list.html</code>.</li><li><b>Default context name:</b> if you omit <code>context_object_name</code>, Django uses <code>&lt;model&gt;_list</code> — e.g. <code>blogpost_list</code>. With <code>context_object_name = 'posts'</code>, the template uses <code>{% for post in posts %}</code>.</li><li><b>Override queryset:</b> override <code>get_queryset()</code> to filter or order:<pre><code>def get_queryset(self):\n    return BlogPost.objects.filter(author=self.request.user).order_by('-created_on')</code></pre></li><li><span class='r'>Trap:</span> Setting <code>queryset = BlogPost.objects.all()</code> as a class attribute is evaluated once at class definition — changes after startup won't reflect. Use <code>get_queryset()</code> for dynamic queries.</li></ul>"
+        },
+        {
+          "title": "3. DetailView",
+          "t": "dj.cbv",
+          "html": "<ul><li><code>DetailView</code> fetches a single object by its primary key (from the URL) and passes it to a template.</li><pre><code>from django.views.generic import DetailView\n\nclass PostDetailView(DetailView):\n    model = BlogPost\n    context_object_name = 'post'\n    template_name = 'blog/post_detail.html'</code></pre><li>URL must pass <code>&lt;int:pk&gt;</code> (or <code>&lt;int:id&gt;</code> with extra config):<pre><code>path('posts/&lt;int:pk&gt;/', PostDetailView.as_view(), name='post-detail')</code></pre></li><li>Default template: <code>&lt;app&gt;/&lt;model&gt;_detail.html</code>.</li><li>Default context name: <code>object</code> (or <code>&lt;model&gt;</code> lowercase — both are available).</li><li><span class='r'>Trap:</span> If the URL uses <code>&lt;int:id&gt;</code> instead of <code>&lt;int:pk&gt;</code>, you must override <code>pk_url_kwarg = 'id'</code> on the view, otherwise Django raises a 404.</li></ul>"
+        },
+        {
+          "title": "4. CreateView",
+          "t": "dj.cbv",
+          "html": "<ul><li><code>CreateView</code> displays a form on GET and saves a new model instance on POST.</li><pre><code>from django.views.generic import CreateView\nfrom django.urls import reverse_lazy\n\nclass PostCreateView(CreateView):\n    model = BlogPost\n    fields = ['title', 'content', 'author']\n    template_name = 'blog/post_form.html'\n    success_url = reverse_lazy('post-list')</code></pre><li><code>fields</code> — which model fields to include in the form. Use <code>'__all__'</code> to include everything.</li><li><code>success_url</code> — where to redirect after a successful save. Use <code>reverse_lazy()</code> (not <code>reverse()</code>) because URLs aren't loaded yet when the class is defined.</li><li>Default template: <code>&lt;app&gt;/&lt;model&gt;_form.html</code>.</li><li><span class='r'>Trap:</span> Using <code>reverse()</code> instead of <code>reverse_lazy()</code> in a class attribute raises <code>NoReverseMatch</code> at import time — before urls.py is loaded.</li></ul>"
+        },
+        {
+          "title": "5. UpdateView",
+          "t": "dj.cbv",
+          "html": "<ul><li><code>UpdateView</code> loads an existing object by pk, displays it in a form, and saves changes on POST.</li><pre><code>from django.views.generic import UpdateView\n\nclass PostUpdateView(UpdateView):\n    model = BlogPost\n    fields = ['title', 'content']\n    template_name = 'blog/post_form.html'\n    success_url = reverse_lazy('post-list')</code></pre><li>It shares the same form template as <code>CreateView</code> by convention (<code>post_form.html</code>). The form is pre-filled with the existing data.</li><li>URL needs <code>&lt;int:pk&gt;</code>:<pre><code>path('posts/&lt;int:pk&gt;/edit/', PostUpdateView.as_view(), name='post-update')</code></pre></li><li><span class='r'>Trap:</span> Omitting <code>success_url</code> and not defining <code>get_absolute_url()</code> on the model causes <code>ImproperlyConfigured</code> after save.</li></ul>"
+        },
+        {
+          "title": "6. DeleteView",
+          "t": "dj.cbv",
+          "html": "<ul><li><code>DeleteView</code> shows a confirmation page on GET and deletes the object on POST.</li><pre><code>from django.views.generic import DeleteView\n\nclass PostDeleteView(DeleteView):\n    model = BlogPost\n    template_name = 'blog/post_confirm_delete.html'\n    success_url = reverse_lazy('post-list')</code></pre><li>Default template: <code>&lt;app&gt;/&lt;model&gt;_confirm_delete.html</code>.</li><li>The confirmation template just needs a POST form with a submit button:<pre><code>&lt;form method=\"post\"&gt;\n  {% csrf_token %}\n  &lt;p&gt;Delete \"{{ object.title }}\"?&lt;/p&gt;\n  &lt;button type=\"submit\"&gt;Yes, delete&lt;/button&gt;\n&lt;/form&gt;</code></pre></li><li>URL needs <code>&lt;int:pk&gt;</code>:<pre><code>path('posts/&lt;int:pk&gt;/delete/', PostDeleteView.as_view(), name='post-delete')</code></pre></li><li><span class='r'>Trap:</span> A GET request to DeleteView does NOT delete anything — it shows the confirmation page. Only a POST triggers deletion.</li></ul>"
+        },
+        {
+          "title": "7. LoginRequiredMixin",
+          "t": "dj.cbv",
+          "html": "<ul><li><code>LoginRequiredMixin</code> protects a CBV — anonymous users are redirected to the login page.</li><pre><code>from django.contrib.auth.mixins import LoginRequiredMixin\nfrom django.views.generic import CreateView\n\nclass PostCreateView(LoginRequiredMixin, CreateView):\n    model = BlogPost\n    fields = ['title', 'content']\n    success_url = reverse_lazy('post-list')</code></pre><li><b>Mixin order matters:</b> <code>LoginRequiredMixin</code> must come <b>first</b> in the class definition, before the view class. Python's MRO runs left to right.</li><li>For function-based views the equivalent is the <code>@login_required</code> decorator:<pre><code>from django.contrib.auth.decorators import login_required\n\n@login_required\ndef my_view(request):\n    ...</code></pre></li><li><span class='r'>Trap:</span> Putting <code>LoginRequiredMixin</code> after the view class (<code>class MyView(CreateView, LoginRequiredMixin)</code>) silently fails — the mixin's <code>dispatch()</code> override never runs.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch10",
+      "num": 10,
+      "title": "Authentication — User model, login, signup, permissions",
+      "lessons": [
+        {
+          "title": "1. The built-in User model",
+          "t": "dj.auth",
+          "html": "<ul><li>Django ships with a complete authentication system. The <code>User</code> model lives in <code>django.contrib.auth.models</code>.</li><li>Key fields:<ul><li><code>username</code> — unique, required</li><li><code>password</code> — stored as a hash, never plain text</li><li><code>email</code>, <code>first_name</code>, <code>last_name</code></li><li><code>is_active</code> — False = account disabled</li><li><code>is_staff</code> — True = can access the admin panel</li><li><code>is_superuser</code> — True = all permissions, no checks</li></ul></li><li>Create a user in code:<pre><code>from django.contrib.auth.models import User\nu = User.objects.create_user(\n    username='malak',\n    password='secret123',\n    email='m@example.com'\n)</code></pre></li><li><span class='r'>Trap:</span> Never use <code>User.objects.create(password='plain')</code> — it stores the password as plain text. Always use <code>create_user()</code> which hashes the password.</li></ul>"
+        },
+        {
+          "title": "2. authenticate() and login()",
+          "t": "dj.auth",
+          "html": "<ul><li><code>authenticate(username, password)</code> checks credentials. Returns the <code>User</code> object if valid, <code>None</code> if not.</li><li><code>login(request, user)</code> creates a session so the user stays logged in across requests.</li><pre><code>from django.contrib.auth import authenticate, login\n\ndef login_view(request):\n    if request.method == 'POST':\n        username = request.POST['username']\n        password = request.POST['password']\n        user = authenticate(request, username=username, password=password)\n        if user is not None:\n            login(request, user)\n            return redirect('home')\n        else:\n            return render(request, 'login.html', {'error': 'Invalid credentials'})\n    return render(request, 'login.html')</code></pre><li><span class='r'>Trap:</span> Calling <code>login(request, user)</code> without first calling <code>authenticate()</code> skips the credential check — anyone can be logged in. Always authenticate first.</li></ul>"
+        },
+        {
+          "title": "3. logout()",
+          "t": "dj.auth",
+          "html": "<ul><li><code>logout(request)</code> clears the session and logs the user out.</li><pre><code>from django.contrib.auth import logout\n\ndef logout_view(request):\n    logout(request)\n    return redirect('home')</code></pre><li>After calling <code>logout()</code>, <code>request.user</code> becomes an <code>AnonymousUser</code>.</li><li>The logout URL should only accept POST requests (to prevent CSRF logout attacks via a link):<pre><code># urls.py\npath('logout/', views.logout_view, name='logout')\n\n# template\n&lt;form method=\"post\" action=\"{% url 'logout' %}\"&gt;\n  {% csrf_token %}\n  &lt;button&gt;Log out&lt;/button&gt;\n&lt;/form&gt;</code></pre></li><li><span class='r'>Trap:</span> Using a GET link <code>&lt;a href=\"/logout/\"&gt;</code> to logout makes the site vulnerable to logout CSRF — an attacker can embed an invisible image that logs the user out.</li></ul>"
+        },
+        {
+          "title": "4. Signup — creating users",
+          "t": "dj.auth",
+          "html": "<ul><li>Django provides <code>UserCreationForm</code> — a built-in ModelForm that creates a new user with password confirmation.</li><pre><code>from django.contrib.auth.forms import UserCreationForm\nfrom django.contrib.auth import login\n\ndef signup_view(request):\n    form = UserCreationForm(request.POST or None)\n    if form.is_valid():\n        user = form.save()         # hashes password, saves user\n        login(request, user)       # log in immediately\n        return redirect('home')\n    return render(request, 'signup.html', {'form': form})</code></pre><li><code>UserCreationForm</code> validates that the two password fields match and that the password meets Django's strength requirements.</li><li>To add extra fields (email, first name), extend it:<pre><code>class SignupForm(UserCreationForm):\n    email = forms.EmailField(required=True)\n    class Meta:\n        model = User\n        fields = ['username', 'email', 'password1', 'password2']</code></pre></li><li><span class='r'>Trap:</span> Calling <code>User.objects.create(password=form.cleaned_data['password1'])</code> stores the password in plain text. <code>form.save()</code> handles hashing correctly.</li></ul>"
+        },
+        {
+          "title": "5. @login_required and LoginRequiredMixin",
+          "t": "dj.auth",
+          "html": "<ul><li>Both tools redirect anonymous users to the login page. Choose based on whether the view is a function or a class.</li><li><b>Function-based:</b> use the <code>@login_required</code> decorator:<pre><code>from django.contrib.auth.decorators import login_required\n\n@login_required\ndef dashboard(request):\n    return render(request, 'dashboard.html')</code></pre></li><li>Anonymous users are redirected to <code>settings.LOGIN_URL</code> (default: <code>/accounts/login/</code>). The original URL is passed as <code>?next=/dashboard/</code> so users land back after login.</li><li><b>Class-based:</b> use <code>LoginRequiredMixin</code> as the first base class:<pre><code>from django.contrib.auth.mixins import LoginRequiredMixin\n\nclass DashboardView(LoginRequiredMixin, ListView):\n    model = BlogPost\n    context_object_name = 'posts'</code></pre></li><li><span class='r'>Trap:</span> <code>@login_required</code> works on functions only. Applying it to a CBV's class (not <code>.as_view()</code>) does nothing. Use <code>LoginRequiredMixin</code> for CBVs.</li></ul>"
+        },
+        {
+          "title": "6. request.user and is_authenticated",
+          "t": "dj.auth",
+          "html": "<ul><li>In every view, <code>request.user</code> is set by Django's <code>AuthenticationMiddleware</code>.</li><li>If the user is logged in: <code>request.user</code> is a <code>User</code> instance and <code>request.user.is_authenticated</code> is <code>True</code>.</li><li>If not logged in: <code>request.user</code> is <code>AnonymousUser</code> and <code>is_authenticated</code> is <code>False</code>.</li><li>Use it in views:<pre><code>def home(request):\n    if request.user.is_authenticated:\n        posts = BlogPost.objects.filter(author=request.user)\n    else:\n        posts = BlogPost.objects.none()\n    return render(request, 'home.html', {'posts': posts})</code></pre></li><li>Use it in templates:<pre><code>{% if user.is_authenticated %}\n  Hello, {{ user.username }}!\n{% else %}\n  &lt;a href=\"{% url 'login' %}\"&gt;Log in&lt;/a&gt;\n{% endif %}</code></pre></li><li><span class='r'>Trap:</span> Checking <code>request.user != None</code> is wrong — <code>AnonymousUser</code> is not <code>None</code>. Always check <code>request.user.is_authenticated</code>.</li></ul>"
+        },
+        {
+          "title": "7. Django's built-in auth URLs",
+          "t": "dj.auth",
+          "html": "<ul><li>Django provides ready-made login/logout/password views. Include them with one line in <code>urls.py</code>:</li><pre><code>from django.contrib.auth import views as auth_views\n\nurlpatterns = [\n    path('accounts/', include('django.contrib.auth.urls')),\n]</code></pre><li>This registers: <code>/accounts/login/</code>, <code>/accounts/logout/</code>, <code>/accounts/password_change/</code>, <code>/accounts/password_reset/</code>, and others.</li><li>You only need to supply the templates. Django looks for them at <code>registration/login.html</code>, <code>registration/logged_out.html</code>, etc.</li><li>After login, Django redirects to <code>settings.LOGIN_REDIRECT_URL</code> (default: <code>/accounts/profile/</code>). Override it:<pre><code># settings.py\nLOGIN_REDIRECT_URL = '/'\nLOGIN_URL = '/accounts/login/'\nLOGOUT_REDIRECT_URL = '/'</code></pre></li><li><span class='r'>Trap:</span> If you don't set <code>LOGIN_REDIRECT_URL</code>, Django redirects to <code>/accounts/profile/</code> which doesn't exist in most projects — giving a 404 after login.</li></ul>"
         }
       ]
     }
@@ -1580,6 +1745,246 @@
       "code": "# CRASH: unhandled DoesNotExist\ndef detail(request, pk):\n    room = Room.objects.get(pk=pk)\n    return render(request, 'detail.html', {'room': room})",
       "out": "from django.shortcuts import get_object_or_404, render\n\ndef detail(request, pk):\n    room = get_object_or_404(Room, pk=pk)\n    return render(request, 'detail.html', {'room': room})",
       "why": "get_object_or_404(Room, pk=pk) calls .get() internally and catches DoesNotExist, raising Http404 instead, which Django renders as a proper 404 page rather than a 500 server error."
+    },
+    {
+      "id": "c75",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 0,
+      "lab": 9,
+      "ans": null,
+      "q": "How do you wire a CBV into urls.py?",
+      "code": "path('posts/', PostListView.___(1)___, name='post-list')",
+      "out": "(1) as_view()",
+      "why": "CBVs are classes, not callables. .as_view() returns a function that Django can call. Forgetting it passes the class itself and raises TypeError at runtime."
+    },
+    {
+      "id": "c76",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 1,
+      "lab": 9,
+      "ans": null,
+      "q": "Write a ListView for BlogPost with context_object_name='posts'.",
+      "code": "from django.views.generic import ___(1)___\n\nclass PostListView(___(1)___):\n    model = ___(2)___\n    template_name = 'blog/post_list.html'\n    context_object_name = ___(3)___",
+      "out": "(1) ListView\n(2) BlogPost\n(3) 'posts'",
+      "why": "ListView fetches all rows of model and puts them in context. context_object_name='posts' means the template uses {% for post in posts %}. Without it the default key is 'blogpost_list'."
+    },
+    {
+      "id": "c77",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 1,
+      "lab": 9,
+      "ans": null,
+      "q": "Override get_queryset() to show only the current user's posts, newest first.",
+      "code": "class MyPostListView(ListView):\n    model = BlogPost\n    context_object_name = 'posts'\n\n    def ___(1)___(self):\n        return BlogPost.objects.___(2)___(\n            author=self.request.___(3)___\n        ).order_by(___(4)___)",
+      "out": "(1) get_queryset\n(2) filter\n(3) user\n(4) '-created_on'",
+      "why": "get_queryset() is the correct hook for dynamic queries. self.request.user is the logged-in user. '-created_on' sorts descending (newest first). Never use a class-level queryset= for dynamic filtering."
+    },
+    {
+      "id": "c78",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 2,
+      "lab": 9,
+      "ans": null,
+      "q": "What URL pattern does DetailView require, and what does it use to look up the object?",
+      "code": "path('posts/<___(1)___:___(2)___/', PostDetailView.as_view(), name='post-detail')",
+      "out": "(1) int\n(2) pk",
+      "why": "DetailView uses pk (primary key) from the URL by default. The URL converter int: restricts it to integers. If you use a different kwarg name like id, set pk_url_kwarg = 'id' on the view."
+    },
+    {
+      "id": "c79",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 3,
+      "lab": 9,
+      "ans": null,
+      "q": "Write a CreateView for BlogPost. What must success_url use instead of reverse()?",
+      "code": "from django.urls import ___(1)___\n\nclass PostCreateView(CreateView):\n    model = BlogPost\n    fields = ['title', 'content', 'author']\n    success_url = ___(1)___('post-list')",
+      "out": "(1) reverse_lazy",
+      "why": "reverse_lazy() is evaluated when first accessed, not at class definition time. reverse() runs immediately at import — before urls.py is fully loaded — causing NoReverseMatch."
+    },
+    {
+      "id": "c80",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 4,
+      "lab": 9,
+      "ans": null,
+      "q": "What is the difference between CreateView and UpdateView?",
+      "code": null,
+      "out": null,
+      "why": "CreateView starts with an empty form and INSERT on POST. UpdateView loads an existing object by pk, pre-fills the form with its current data, and UPDATE on POST. They share the same template name convention (<model>_form.html)."
+    },
+    {
+      "id": "c81",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 5,
+      "lab": 9,
+      "ans": null,
+      "q": "What HTTP method triggers the actual deletion in DeleteView, and what does GET do?",
+      "code": null,
+      "out": null,
+      "why": "GET shows the confirmation template (_confirm_delete.html). POST triggers the deletion. This two-step design prevents accidental or CSRF-triggered deletes from a simple link click."
+    },
+    {
+      "id": "c82",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 6,
+      "lab": 9,
+      "ans": null,
+      "q": "Add login protection to a CreateView using the correct mixin.",
+      "code": "from django.contrib.auth.mixins import ___(1)___\n\nclass PostCreateView(___(1)___, CreateView):\n    model = BlogPost\n    fields = ['title', 'content']\n    success_url = reverse_lazy('post-list')",
+      "out": "(1) LoginRequiredMixin",
+      "why": "LoginRequiredMixin must be listed first (before CreateView) so its dispatch() runs before the view logic. Anonymous users are redirected to LOGIN_URL. For FBVs use @login_required instead."
+    },
+    {
+      "id": "c83",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 1,
+      "lab": 9,
+      "ans": null,
+      "q": "What is the default context name and default template name for a ListView on BlogPost?",
+      "code": null,
+      "out": "Default context name: 'blogpost_list'\nDefault template: 'blog/blogpost_list.html'  (appname/modelname_list.html)",
+      "why": "Django derives both from the model name in lowercase. Set context_object_name and template_name explicitly to use cleaner names and avoid being tied to the model name."
+    },
+    {
+      "id": "c84",
+      "t": "dj.cbv",
+      "src": "ch9",
+      "ls": 0,
+      "lab": 9,
+      "ans": null,
+      "q": "What are the five generic CBVs and their purpose in one word each?",
+      "code": null,
+      "out": "ListView     — list all rows\nDetailView   — show one row\nCreateView   — new row form\nUpdateView   — edit existing row\nDeleteView   — confirm + delete",
+      "why": "These five cover the full CRUD cycle: Create (CreateView), Read (ListView + DetailView), Update (UpdateView), Delete (DeleteView). They all live in django.views.generic."
+    },
+    {
+      "id": "c85",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 0,
+      "lab": 10,
+      "ans": null,
+      "q": "Create a user safely. What is wrong with the second version?",
+      "code": "# CORRECT\nu = User.objects.create_user(\n    username='malak', password='secret123')\n\n# BUG\nu = User.objects.create(\n    username='malak', password='secret123')",
+      "out": "Bug: .create() stores password as plain text.\ncreate_user() hashes the password with PBKDF2.",
+      "why": "Django uses PBKDF2 (or Argon2/bcrypt if configured) to hash passwords. create_user() calls set_password() internally. .create() bypasses this and stores the raw string — anyone who reads the DB can see the password."
+    },
+    {
+      "id": "c86",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 1,
+      "lab": 10,
+      "ans": null,
+      "q": "Complete the login view.",
+      "code": "from django.contrib.auth import ___(1)___, ___(2)___\n\ndef login_view(request):\n    if request.method == 'POST':\n        user = ___(1)___(request,\n            username=request.POST['username'],\n            password=request.POST['password'])\n        if user is not None:\n            ___(2)___(request, user)\n            return redirect('home')\n    return render(request, 'login.html')",
+      "out": "(1) authenticate\n(2) login",
+      "why": "authenticate() checks the credentials and returns the User or None. login() creates the session. The order is mandatory — authenticate first, then login."
+    },
+    {
+      "id": "c87",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 2,
+      "lab": 10,
+      "ans": null,
+      "q": "Write the logout view.",
+      "code": "from django.contrib.auth import ___(1)___\n\ndef logout_view(request):\n    ___(1)___(request)\n    return redirect('home')",
+      "out": "(1) logout",
+      "why": "logout(request) flushes the session data and sets request.user to AnonymousUser. After this call the user is no longer authenticated. The view should only accept POST requests to prevent CSRF logout via a link."
+    },
+    {
+      "id": "c88",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 3,
+      "lab": 10,
+      "ans": null,
+      "q": "Use UserCreationForm to build a signup view that logs the user in immediately.",
+      "code": "from django.contrib.auth.forms import ___(1)___\nfrom django.contrib.auth import login\n\ndef signup_view(request):\n    form = ___(1)___(request.POST or None)\n    if form.is_valid():\n        user = form.___(2)___()\n        ___(3)___(request, user)\n        return redirect('home')\n    return render(request, 'signup.html', {'form': form})",
+      "out": "(1) UserCreationForm\n(2) save\n(3) login",
+      "why": "UserCreationForm is Django's built-in form for user registration. form.save() hashes the password and creates the User. login() then creates a session so the user is immediately authenticated."
+    },
+    {
+      "id": "c89",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 4,
+      "lab": 10,
+      "ans": null,
+      "q": "What is wrong with this CBV protection?",
+      "code": "# WRONG\n@login_required\nclass PostCreateView(CreateView):\n    model = BlogPost\n    fields = ['title']\n\n# CORRECT\nclass PostCreateView(___(1)___, CreateView):\n    model = BlogPost\n    fields = ['title']",
+      "out": "(1) LoginRequiredMixin",
+      "why": "@login_required is a decorator for functions. Applying it to a class does nothing useful. For CBVs, use LoginRequiredMixin as the first base class — its dispatch() method runs before the view and redirects anonymous users."
+    },
+    {
+      "id": "c90",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 5,
+      "lab": 10,
+      "ans": null,
+      "q": "Show the template snippet that greets logged-in users and shows a login link to others.",
+      "code": "{% ___(1)___ user.___(2)___ %}\n  Hello, {{ user.___(3)___ }}!\n{% else %}\n  <a href=\"{% url 'login' %}\">Log in</a>\n{% endif %}",
+      "out": "(1) if\n(2) is_authenticated\n(3) username",
+      "why": "user is available in every template via the auth context processor (enabled by default). is_authenticated is True for logged-in users, False for AnonymousUser. Never check user != None — AnonymousUser is not None."
+    },
+    {
+      "id": "c91",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 6,
+      "lab": 10,
+      "ans": null,
+      "q": "What three settings control redirect URLs for auth views?",
+      "code": "# settings.py\n___(1)___ = '/'\n___(2)___ = '/accounts/login/'\n___(3)___ = '/'",
+      "out": "(1) LOGIN_REDIRECT_URL\n(2) LOGIN_URL\n(3) LOGOUT_REDIRECT_URL",
+      "why": "LOGIN_REDIRECT_URL: where to go after a successful login (default: /accounts/profile/). LOGIN_URL: where @login_required sends anonymous users (default: /accounts/login/). LOGOUT_REDIRECT_URL: where to go after logout."
+    },
+    {
+      "id": "c92",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 0,
+      "lab": 10,
+      "ans": null,
+      "q": "What is the difference between is_staff, is_superuser, and is_active?",
+      "code": null,
+      "out": "is_active=False   → account disabled, cannot log in\nis_staff=True     → can access /admin/ panel\nis_superuser=True → all permissions, bypasses all checks",
+      "why": "is_active controls whether the account exists functionally. is_staff grants admin panel access. is_superuser is the highest privilege level — it overrides all permission checks. A new user gets is_active=True, is_staff=False, is_superuser=False."
+    },
+    {
+      "id": "c93",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 1,
+      "lab": 10,
+      "ans": null,
+      "q": "What does authenticate() return when credentials are wrong?",
+      "code": "user = authenticate(username='malak', password='wrong')\nprint(user)  # prints: ___",
+      "out": "None",
+      "why": "authenticate() returns None if credentials don't match any user. Always check 'if user is not None' before calling login(). Calling login(request, None) raises AttributeError."
+    },
+    {
+      "id": "c94",
+      "t": "dj.auth",
+      "src": "ch10",
+      "ls": 6,
+      "lab": 10,
+      "ans": null,
+      "q": "Include Django's built-in auth URLs in one line. What routes does it add?",
+      "code": "path('accounts/', include(___(1)___))",
+      "out": "(1) 'django.contrib.auth.urls'\nAdds: /accounts/login/, /accounts/logout/,\n      /accounts/password_change/,\n      /accounts/password_reset/",
+      "why": "django.contrib.auth.urls is a pre-built URL conf. It wires all the auth views. You only need to provide the templates (registration/login.html etc.). Set LOGIN_REDIRECT_URL in settings.py or it redirects to /accounts/profile/ (404 by default)."
     }
   ],
   "mcq": [
@@ -2557,6 +2962,266 @@
         "Http500"
       ],
       "why": "get_object_or_404 catches DoesNotExist internally and re-raises it as Http404. This gives users a clean 404 page instead of a 500 server error. It's the correct tool to use in views when looking up user-supplied IDs."
+    },
+    {
+      "id": "q75",
+      "t": "dj.cbv",
+      "q": "What does .as_view() do?",
+      "code": "path('posts/', PostListView.as_view(), name='post-list')",
+      "ok": "Converts the CBV class into a callable view function that Django can call",
+      "bad": [
+        "Registers the view in Django's registry",
+        "Renders the template immediately",
+        "Creates a new instance of the view class"
+      ],
+      "why": "Django's URL dispatcher expects a callable. CBVs are classes, not callables. .as_view() returns a function that creates an instance of the class and calls its dispatch() method on each request."
+    },
+    {
+      "id": "q76",
+      "t": "dj.cbv",
+      "q": "What is the default template name for PostListView (model=BlogPost, app='blog')?",
+      "code": null,
+      "ok": "blog/blogpost_list.html",
+      "bad": [
+        "blog/post_list.html",
+        "blog/list.html",
+        "blogpost/list.html"
+      ],
+      "why": "Django derives the template name as <app_label>/<model_name_lower>_list.html. With app='blog' and model=BlogPost, it becomes blog/blogpost_list.html. Set template_name explicitly to use a cleaner name."
+    },
+    {
+      "id": "q77",
+      "t": "dj.cbv",
+      "q": "What is the default context variable name in a ListView when context_object_name is not set?",
+      "code": "class PostListView(ListView):\n    model = BlogPost",
+      "ok": "blogpost_list",
+      "bad": [
+        "posts",
+        "object_list",
+        "blogposts"
+      ],
+      "why": "Without context_object_name, Django uses <model_name_lower>_list. For BlogPost that is 'blogpost_list'. object_list is also available as a secondary name. Set context_object_name='posts' for a cleaner template variable."
+    },
+    {
+      "id": "q78",
+      "t": "dj.cbv",
+      "q": "Why must success_url use reverse_lazy() instead of reverse()?",
+      "code": "class PostCreateView(CreateView):\n    success_url = reverse('post-list')  # BUG",
+      "ok": "reverse() runs at class definition time, before urls.py is loaded — raising NoReverseMatch",
+      "bad": [
+        "reverse() only works in function-based views",
+        "reverse_lazy() is faster at runtime",
+        "Django requires reverse_lazy() for all URL names"
+      ],
+      "why": "Class attributes are evaluated when the class is defined (at import time). reverse() needs the URL conf to be loaded, but it isn't yet. reverse_lazy() defers evaluation until it's actually needed — after urls.py is loaded."
+    },
+    {
+      "id": "q79",
+      "t": "dj.cbv",
+      "q": "In which order must LoginRequiredMixin appear in the class definition?",
+      "code": "class PostCreateView(___, CreateView):",
+      "ok": "First — LoginRequiredMixin must come before CreateView",
+      "bad": [
+        "Last — after the view class",
+        "It doesn't matter — Python handles it",
+        "In a separate @mixin decorator above the class"
+      ],
+      "why": "Python's MRO (Method Resolution Order) processes base classes left to right. LoginRequiredMixin's dispatch() must run before CreateView's dispatch(). If CreateView is listed first, the mixin's check never runs."
+    },
+    {
+      "id": "q80",
+      "t": "dj.cbv",
+      "q": "What HTTP method does DeleteView use to actually delete the object?",
+      "code": null,
+      "ok": "POST — GET only shows the confirmation page",
+      "bad": [
+        "GET",
+        "DELETE",
+        "Both GET and POST"
+      ],
+      "why": "DeleteView on GET renders a confirmation template. On POST it calls object.delete() and redirects to success_url. This two-step process prevents accidental or CSRF-triggered deletions from a URL link."
+    },
+    {
+      "id": "q81",
+      "t": "dj.cbv",
+      "q": "Which CBV would you use to show a form pre-filled with existing data for editing?",
+      "code": null,
+      "ok": "UpdateView",
+      "bad": [
+        "CreateView",
+        "DetailView",
+        "FormView"
+      ],
+      "why": "UpdateView loads an existing object by pk, passes it as the initial data to the form, and UPDATE the row on POST. CreateView starts with an empty form and INSERT on POST. DetailView shows data with no editing."
+    },
+    {
+      "id": "q82",
+      "t": "dj.cbv",
+      "q": "What is the correct way to filter a ListView to only show the logged-in user's posts?",
+      "code": null,
+      "ok": "Override get_queryset() and return BlogPost.objects.filter(author=self.request.user)",
+      "bad": [
+        "Set queryset = BlogPost.objects.filter(author=request.user) as a class attribute",
+        "Override get_context_data() and filter there",
+        "Pass a queryset argument to ListView.as_view()"
+      ],
+      "why": "Class attributes are evaluated once at import time. self.request.user doesn't exist then. get_queryset() is called on every request with self.request available. This is the correct hook for dynamic filtering."
+    },
+    {
+      "id": "q83",
+      "t": "dj.cbv",
+      "q": "What does DetailView use by default to look up the object from the URL?",
+      "code": "path('posts/<int:pk>/', PostDetailView.as_view())",
+      "ok": "The pk URL keyword argument — it calls Model.objects.get(pk=pk)",
+      "bad": [
+        "The id keyword argument",
+        "The slug keyword argument",
+        "The first positional argument"
+      ],
+      "why": "DetailView's default pk_url_kwarg is 'pk'. It extracts pk from self.kwargs and calls get_object() which does Model.objects.get(pk=pk). To use 'id' instead, set pk_url_kwarg = 'id' on the view."
+    },
+    {
+      "id": "q84",
+      "t": "dj.cbv",
+      "q": "Which of these applies @login_required correctly to a CBV?",
+      "code": null,
+      "ok": "class MyView(LoginRequiredMixin, ListView): ...",
+      "bad": [
+        "@login_required\nclass MyView(ListView): ...",
+        "path('/', login_required(MyView), name='home')",
+        "class MyView(ListView, LoginRequiredMixin): ..."
+      ],
+      "why": "LoginRequiredMixin must be first in the class bases. Decorating the class with @login_required does not work correctly for CBVs. path(..., login_required(MyView)) also fails because MyView is not yet a callable. Use LoginRequiredMixin as first base."
+    },
+    {
+      "id": "q85",
+      "t": "dj.auth",
+      "q": "What is the difference between User.objects.create() and User.objects.create_user()?",
+      "code": null,
+      "ok": "create_user() hashes the password; create() stores it as plain text",
+      "bad": [
+        "create() is faster",
+        "create_user() only works with superusers",
+        "They are identical — both hash the password"
+      ],
+      "why": "create_user() calls set_password() which runs the password through PBKDF2 (or configured hasher). create() sets the field directly with no hashing. Never use create() for user accounts."
+    },
+    {
+      "id": "q86",
+      "t": "dj.auth",
+      "q": "authenticate(username='malak', password='wrong') returns what?",
+      "code": null,
+      "ok": "None",
+      "bad": [
+        "Raises AuthenticationError",
+        "Returns an AnonymousUser",
+        "Returns False"
+      ],
+      "why": "authenticate() returns None when credentials don't match. It never raises an exception for wrong credentials. Always check 'if user is not None' before calling login()."
+    },
+    {
+      "id": "q87",
+      "t": "dj.auth",
+      "q": "What does login(request, user) do?",
+      "code": null,
+      "ok": "Creates a session so the user stays authenticated across subsequent requests",
+      "bad": [
+        "Checks the username and password",
+        "Renders the login template",
+        "Sets request.user.is_staff to True"
+      ],
+      "why": "login() writes the user's ID into the session. On every subsequent request, Django reads the session and sets request.user to that user. authenticate() checks credentials — login() persists the result."
+    },
+    {
+      "id": "q88",
+      "t": "dj.auth",
+      "q": "Which built-in form handles user registration with password confirmation?",
+      "code": null,
+      "ok": "UserCreationForm",
+      "bad": [
+        "UserRegistrationForm",
+        "AuthenticationForm",
+        "SignupForm"
+      ],
+      "why": "UserCreationForm is in django.contrib.auth.forms. It includes username, password1, and password2 fields with validation that the two passwords match and meet strength requirements."
+    },
+    {
+      "id": "q89",
+      "t": "dj.auth",
+      "q": "What does request.user contain for a non-authenticated request?",
+      "code": null,
+      "ok": "An AnonymousUser instance — is_authenticated is False",
+      "bad": [
+        "None",
+        "An empty User object with no pk",
+        "It raises AttributeError"
+      ],
+      "why": "Django's AuthenticationMiddleware always sets request.user. For unauthenticated requests it uses AnonymousUser, which has is_authenticated=False. It is never None — checking 'request.user != None' is always True and therefore wrong."
+    },
+    {
+      "id": "q90",
+      "t": "dj.auth",
+      "q": "What does @login_required do when an anonymous user hits the view?",
+      "code": "@login_required\ndef dashboard(request): ...",
+      "ok": "Redirects to LOGIN_URL with ?next=/dashboard/",
+      "bad": [
+        "Returns HTTP 403 Forbidden",
+        "Returns HTTP 404 Not Found",
+        "Calls the view but sets request.user to None"
+      ],
+      "why": "@login_required checks request.user.is_authenticated. If False, it redirects to settings.LOGIN_URL (default: /accounts/login/) appending ?next= so the user is redirected back after login."
+    },
+    {
+      "id": "q91",
+      "t": "dj.auth",
+      "q": "If LOGIN_REDIRECT_URL is not set, where does Django redirect after a successful login?",
+      "code": null,
+      "ok": "/accounts/profile/ — which causes a 404 in most projects",
+      "bad": [
+        "/",
+        "/home/",
+        "/accounts/login/"
+      ],
+      "why": "Django's default LOGIN_REDIRECT_URL is '/accounts/profile/'. Since most projects don't create this URL, login succeeds but users hit a 404. Always set LOGIN_REDIRECT_URL = '/' in settings.py."
+    },
+    {
+      "id": "q92",
+      "t": "dj.auth",
+      "q": "Which user field would you check to see if a user can access the Django admin panel?",
+      "code": null,
+      "ok": "is_staff",
+      "bad": [
+        "is_superuser",
+        "is_active",
+        "is_authenticated"
+      ],
+      "why": "is_staff=True allows access to /admin/. is_superuser=True grants all permissions (and also allows admin access). is_active=False disables the account entirely. is_authenticated checks if currently logged in."
+    },
+    {
+      "id": "q93",
+      "t": "dj.auth",
+      "q": "What is the one-line include for all Django built-in auth views?",
+      "code": "path('accounts/', include(___))",
+      "ok": "'django.contrib.auth.urls'",
+      "bad": [
+        "'django.contrib.auth'",
+        "'auth.urls'",
+        "'django.auth.urls'"
+      ],
+      "why": "The correct string is 'django.contrib.auth.urls'. This registers login, logout, password_change, password_reset and related views under the given prefix."
+    },
+    {
+      "id": "q94",
+      "t": "dj.auth",
+      "q": "In a template, how do you correctly check if the current user is logged in?",
+      "code": "{% ___ %}\n  Hello, {{ user.username }}!\n{% endif %}",
+      "ok": "if user.is_authenticated",
+      "bad": [
+        "if user != None",
+        "if user.is_logged_in",
+        "if request.user"
+      ],
+      "why": "user.is_authenticated is the correct check. user != None is always True (AnonymousUser is not None). is_logged_in does not exist. request is not available as a bare name in templates (unless you pass it in context)."
     }
   ],
   "topics": {
@@ -5283,6 +5948,439 @@
                   "An error — cannot chain filter and order_by"
                 ],
                 "why": "QuerySet methods chain: filter() limits rows, order_by('-name') sorts the result descending. The - prefix means descending."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj21",
+      "ch": "ch9",
+      "t": "dj.cbv",
+      "title": "Five generic CBVs — full CRUD at a glance",
+      "steps": [
+        {
+          "say": "Django's five generic views cover every CRUD operation. Let's map them out before diving into each one.",
+          "add": [
+            [
+              "h",
+              "The five generic CBVs"
+            ],
+            [
+              "w",
+              "{b:ListView} — model + context_object_name + template → list all rows"
+            ],
+            [
+              "w",
+              "{b:DetailView} — pk from URL → show one row"
+            ],
+            [
+              "w",
+              "{b:CreateView} — fields + success_url → empty form → INSERT"
+            ],
+            [
+              "w",
+              "{b:UpdateView} — pk + fields + success_url → prefilled form → UPDATE"
+            ],
+            [
+              "w",
+              "{b:DeleteView} — pk + success_url → confirm page → DELETE"
+            ],
+            [
+              "sticky",
+              "All five live in:\nfrom django.views.generic import\n  ListView, DetailView, CreateView,\n  UpdateView, DeleteView",
+              "b"
+            ]
+          ]
+        },
+        {
+          "say": "Here is the complete urls.py wiring for all five. The pattern is always the same: ClassName.as_view().",
+          "add": [
+            [
+              "h",
+              "urls.py — wiring all five"
+            ],
+            [
+              "code",
+              "from django.urls import path\nfrom .views import (\n    PostListView, PostDetailView,\n    PostCreateView, PostUpdateView, PostDeleteView\n)\n\nurlpatterns = [\n    path('posts/',                PostListView.as_view(),   name='post-list'),\n    path('posts/<int:pk>/',       PostDetailView.as_view(), name='post-detail'),\n    path('posts/new/',            PostCreateView.as_view(), name='post-create'),\n    path('posts/<int:pk>/edit/',  PostUpdateView.as_view(), name='post-update'),\n    path('posts/<int:pk>/delete/',PostDeleteView.as_view(), name='post-delete'),\n]",
+              {}
+            ],
+            [
+              "sticky",
+              "Forgetting .as_view() passes the class\nnot a callable — TypeError at runtime.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "And here is the complete views.py with all five CBVs. This is the exam answer for a full CRUD setup.",
+          "add": [
+            [
+              "h",
+              "views.py — all five CBVs"
+            ],
+            [
+              "code",
+              "from django.views.generic import (\n    ListView, DetailView,\n    CreateView, UpdateView, DeleteView\n)\nfrom django.urls import reverse_lazy\nfrom .models import BlogPost\n\nclass PostListView(ListView):\n    model = BlogPost\n    context_object_name = 'posts'\n\nclass PostDetailView(DetailView):\n    model = BlogPost\n    context_object_name = 'post'\n\nclass PostCreateView(CreateView):\n    model = BlogPost\n    fields = ['title', 'content', 'author']\n    success_url = reverse_lazy('post-list')\n\nclass PostUpdateView(UpdateView):\n    model = BlogPost\n    fields = ['title', 'content']\n    success_url = reverse_lazy('post-list')\n\nclass PostDeleteView(DeleteView):\n    model = BlogPost\n    success_url = reverse_lazy('post-list')",
+              {
+                "5": "← context_object_name: template uses {% for post in posts %}",
+                "14": "← reverse_lazy not reverse() — URLs not loaded at class definition"
+              }
+            ],
+            [
+              "try",
+              {
+                "q": "What would happen if you wrote success_url = reverse('post-list') instead of reverse_lazy?",
+                "code": null,
+                "ok": "NoReverseMatch at import time — urls.py isn't loaded yet when the class is defined",
+                "bad": [
+                  "It would work identically",
+                  "It would redirect to the wrong URL",
+                  "It would raise a RuntimeError at request time"
+                ],
+                "why": "reverse() runs immediately at class definition (import time). URL conf isn't ready yet, so it raises NoReverseMatch. reverse_lazy() defers the lookup until the URL is actually needed."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj22",
+      "ch": "ch9",
+      "t": "dj.cbv",
+      "title": "get_queryset() override and LoginRequiredMixin",
+      "steps": [
+        {
+          "say": "Two of the most tested CBV skills: filtering the queryset dynamically and protecting views from anonymous users.",
+          "add": [
+            [
+              "h",
+              "Overriding get_queryset()"
+            ],
+            [
+              "code",
+              "class MyPostListView(LoginRequiredMixin, ListView):\n    model = BlogPost\n    context_object_name = 'posts'\n\n    def get_queryset(self):\n        # only show the logged-in user's posts, newest first\n        return BlogPost.objects.filter(\n            author=self.request.user\n        ).order_by('-created_on')",
+              {
+                "0": "← LoginRequiredMixin FIRST — before ListView",
+                "5": "← self.request.user is the logged-in user"
+              }
+            ],
+            [
+              "sticky",
+              "Never use a class-level queryset=\nfor dynamic filtering — it evaluates\nonce at import, not per request.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "LoginRequiredMixin must come first. Here is what goes wrong when it doesn't.",
+          "add": [
+            [
+              "h",
+              "Mixin order — right vs wrong"
+            ],
+            [
+              "w",
+              "{b:CORRECT:} class MyView(LoginRequiredMixin, ListView)"
+            ],
+            [
+              "w",
+              "{b:WRONG:}   class MyView(ListView, LoginRequiredMixin)"
+            ],
+            [
+              "w",
+              "Python MRO runs left to right — LoginRequiredMixin.dispatch() must intercept the request before ListView.dispatch() runs."
+            ],
+            [
+              "w",
+              "With the wrong order, anonymous users reach the view — no redirect happens."
+            ],
+            [
+              "sticky",
+              "Rule: Mixin always first.\nLoginRequiredMixin → then the view class.",
+              "g"
+            ]
+          ]
+        },
+        {
+          "say": "Here is the verified output: 2 posts for author Malak, 1 for Ali — get_queryset correctly filters per author.",
+          "add": [
+            [
+              "h",
+              "Verified output from test run"
+            ],
+            [
+              "code",
+              "# AuthorPostListView(get_queryset filtering author='Malak')\nview.object_list = view.get_queryset()\nassert view.object_list.count() == 2\n# → Custom get_queryset(author=Malak): 2 posts OK\n\n# LoginRequiredMixin in MRO\nassert LoginRequiredMixin in ProtectedListView.__mro__\n# → LoginRequiredMixin in ProtectedListView MRO OK",
+              {}
+            ],
+            [
+              "try",
+              {
+                "q": "get_queryset() is defined on a ListView. When is it called?",
+                "code": null,
+                "ok": "On every request — it runs as part of the view's dispatch cycle",
+                "bad": [
+                  "Once at class definition time",
+                  "Only on the first request (then cached)",
+                  "Only when the template calls {% for %}"
+                ],
+                "why": "get_queryset() is an instance method called during request handling, not at class definition. This is why it can safely use self.request.user, which only exists at request time."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj23",
+      "ch": "ch9",
+      "t": "dj.cbv",
+      "title": "Exam-style: complete the CBV views.py and urls.py",
+      "steps": [
+        {
+          "say": "This is the Part 3 CBV exam question — fill in every blank to build a complete CRUD setup for BlogPost.",
+          "add": [
+            [
+              "h",
+              "Exam blank-fill — views.py"
+            ],
+            [
+              "code",
+              "from django.views.generic import (\n    ___(1)___, DetailView,\n    CreateView, ___(2)___, DeleteView\n)\nfrom django.urls import ___(3)___\nfrom .models import BlogPost\n\nclass PostListView(___(1)___):\n    model = BlogPost\n    context_object_name = 'posts'\n\nclass PostCreateView(CreateView):\n    model = BlogPost\n    fields = ['title', 'content']\n    success_url = ___(3)___('post-list')\n\nclass PostDeleteView(DeleteView):\n    model = BlogPost\n    success_url = ___(3)___('post-list')",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Now fill in the urls.py blanks — pay attention to the .as_view() calls.",
+          "add": [
+            [
+              "h",
+              "Exam blank-fill — urls.py"
+            ],
+            [
+              "code",
+              "urlpatterns = [\n    path('posts/',\n         PostListView.___(4)___,\n         name='post-list'),\n    path('posts/new/',\n         PostCreateView.___(4)___,\n         name='post-create'),\n    path('posts/<___(5)___:pk>/delete/',\n         PostDeleteView.___(4)___,\n         name='post-delete'),\n]",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Full solution with every blank explained.",
+          "add": [
+            [
+              "h",
+              "Full solution"
+            ],
+            [
+              "w",
+              "{b:(1) ListView} — shows all rows from model"
+            ],
+            [
+              "w",
+              "{b:(2) UpdateView} — prefills form with existing data"
+            ],
+            [
+              "w",
+              "{b:(3) reverse_lazy} — deferred URL reverse for class attributes"
+            ],
+            [
+              "w",
+              "{b:(4) as_view()} — converts class to callable; mandatory in urls.py"
+            ],
+            [
+              "w",
+              "{b:(5) int} — type converter; restricts pk to integers only"
+            ],
+            [
+              "sticky",
+              "Three things always wrong in exams:\n1. reverse() instead of reverse_lazy()\n2. Missing .as_view()\n3. LoginRequiredMixin listed last",
+              "p"
+            ],
+            [
+              "try",
+              {
+                "q": "A student writes path('posts/<pk>/delete/', ...). What is missing from the URL pattern?",
+                "code": null,
+                "ok": "The int: type converter — should be <int:pk>",
+                "bad": [
+                  "The trailing slash",
+                  "The name= argument",
+                  "Nothing — <pk> is valid"
+                ],
+                "why": "Without int:, the URL matches any string, not just integers. <int:pk> converts the captured value to an integer and only matches numeric strings, preventing 'abc' from reaching the view."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj24",
+      "ch": "ch10",
+      "t": "dj.auth",
+      "title": "Authentication flow — login, logout, signup from scratch",
+      "steps": [
+        {
+          "say": "Authentication has three parts: login, logout, and signup. Let's build all three views, then verify each one works.",
+          "add": [
+            [
+              "h",
+              "Login view — authenticate then login"
+            ],
+            [
+              "code",
+              "from django.contrib.auth import authenticate, login\n\ndef login_view(request):\n    if request.method == 'POST':\n        username = request.POST['username']\n        password = request.POST['password']\n        user = authenticate(request, username=username, password=password)\n        if user is not None:\n            login(request, user)   # creates session\n            return redirect('home')\n        # wrong credentials — re-render with error\n        return render(request, 'login.html', {'error': 'Invalid credentials'})\n    return render(request, 'login.html')",
+              {
+                "6": "← authenticate(): returns User or None",
+                "8": "← login(): writes user id into session"
+              }
+            ],
+            [
+              "sticky",
+              "Order is mandatory:\nauthenticate() first → check result\nlogin() second → create session.",
+              "y"
+            ]
+          ]
+        },
+        {
+          "say": "Logout just flushes the session. Signup uses UserCreationForm to handle password hashing.",
+          "add": [
+            [
+              "h",
+              "Logout + Signup views"
+            ],
+            [
+              "code",
+              "from django.contrib.auth import logout\nfrom django.contrib.auth.forms import UserCreationForm\n\ndef logout_view(request):\n    logout(request)             # flushes session\n    return redirect('home')\n\ndef signup_view(request):\n    form = UserCreationForm(request.POST or None)\n    if form.is_valid():\n        user = form.save()      # hashes password, creates User\n        login(request, user)    # log in immediately after signup\n        return redirect('home')\n    return render(request, 'signup.html', {'form': form})",
+              {
+                "4": "← logout() sets request.user = AnonymousUser",
+                "10": "← form.save() not User.objects.create()",
+                "11": "← log in right after signup for better UX"
+              }
+            ],
+            [
+              "sticky",
+              "Never: User.objects.create(password=...)\nAlways: form.save() or create_user()\nPlain-text passwords = instant security fail.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "Here is what the verification confirmed — authenticate, login, and is_authenticated all behave as expected.",
+          "add": [
+            [
+              "h",
+              "Verified output"
+            ],
+            [
+              "code",
+              "u = User.objects.create_user(username='testuser9', password='pass123')\n# → create_user(): pk=4, is_staff=False OK\n\nok = authenticate(username='testuser9', password='pass123')\nassert ok is not None\n# → authenticate(): correct→user OK\n\nbad = authenticate(username='testuser9', password='wrong')\nassert bad is None\n# → authenticate(): wrong→None OK\n\nassert u.is_authenticated\nassert not AnonymousUser().is_authenticated\n# → is_authenticated: True / False OK",
+              {}
+            ],
+            [
+              "try",
+              {
+                "q": "What happens if you call login(request, user) without calling authenticate() first?",
+                "code": null,
+                "ok": "The session is created for the user without any credential check — a security bypass",
+                "bad": [
+                  "Django raises AuthenticationError",
+                  "It redirects to LOGIN_URL",
+                  "Nothing — login() runs authenticate() internally"
+                ],
+                "why": "login() just writes the user's id into the session. It does not verify the password. authenticate() is what checks credentials. Skipping it means you can log in anyone without knowing their password."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dj25",
+      "ch": "ch10",
+      "t": "dj.auth",
+      "title": "Exam-style: complete the auth views and templates",
+      "steps": [
+        {
+          "say": "This is the Part 3 auth exam question. Fill in every blank in the views and template.",
+          "add": [
+            [
+              "h",
+              "Exam blank-fill — auth views"
+            ],
+            [
+              "code",
+              "from django.contrib.auth import ___(1)___, ___(2)___, ___(3)___\nfrom django.contrib.auth.forms import ___(4)___\n\ndef login_view(request):\n    if request.method == 'POST':\n        user = ___(1)___(request,\n            username=request.POST['username'],\n            password=request.POST['password'])\n        if user is not None:\n            ___(2)___(request, user)\n            return redirect('home')\n    return render(request, 'login.html')\n\ndef logout_view(request):\n    ___(3)___(request)\n    return redirect('home')\n\ndef signup_view(request):\n    form = ___(4)___(request.POST or None)\n    if form.is_valid():\n        user = form.save()\n        ___(2)___(request, user)\n        return redirect('home')\n    return render(request, 'signup.html', {'form': form})",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Now fill in the template that shows different content to logged-in vs anonymous users.",
+          "add": [
+            [
+              "h",
+              "Exam blank-fill — template"
+            ],
+            [
+              "code",
+              "{% if user.___(5)___ %}\n  Hello, {{ user.___(6)___ }}!\n  <form method=\"post\" action=\"{% url 'logout' %}\">\n    {% csrf_token %}\n    <button>Log out</button>\n  </form>\n{% else %}\n  <a href=\"{% url 'login' %}\">Log in</a>\n{% endif %}",
+              {}
+            ]
+          ]
+        },
+        {
+          "say": "Full solution — every blank with its reasoning.",
+          "add": [
+            [
+              "h",
+              "Full solution"
+            ],
+            [
+              "w",
+              "{b:(1) authenticate} — checks credentials, returns User or None"
+            ],
+            [
+              "w",
+              "{b:(2) login} — creates the session (used in login_view AND signup_view)"
+            ],
+            [
+              "w",
+              "{b:(3) logout} — flushes the session"
+            ],
+            [
+              "w",
+              "{b:(4) UserCreationForm} — built-in form with password confirmation"
+            ],
+            [
+              "w",
+              "{b:(5) is_authenticated} — True for logged-in users, False for AnonymousUser"
+            ],
+            [
+              "w",
+              "{b:(6) username} — the User field that holds the login name"
+            ],
+            [
+              "sticky",
+              "Exam trap: user != None is always True.\nAnonymousUser is not None.\nAlways check user.is_authenticated.",
+              "p"
+            ],
+            [
+              "try",
+              {
+                "q": "After calling logout(request), what is request.user set to?",
+                "code": null,
+                "ok": "AnonymousUser — with is_authenticated = False",
+                "bad": [
+                  "None",
+                  "The previously logged-in User object",
+                  "An empty User() instance"
+                ],
+                "why": "logout() flushes the session and replaces request.user with an AnonymousUser instance. It is never None — Django always ensures request.user is set to something."
               }
             ]
           ]
