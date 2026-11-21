@@ -584,9 +584,22 @@ function chapterMastery(ch) {
   return { m: w ? s / w : null, n };
 }
 function subjectProgress(sid) {
-  // overall % complete: lessons read + qs answered for a subject
+  // % complete: blend of lessons read and questions answered relative to subject size
   const b = S.sub[sid]; if (!b) return 0;
-  const totalOk = b.totalOk || 0; return Math.min(100, Math.round(totalOk / 20));
+  const subj = SUBJECTS.find(s => s.id === sid);
+  // Try to load from already-parsed content if it's the active subject
+  const content = (sid === activeSubjectId && C) ? C : null;
+  if (content) {
+    const totalLessons = content.chapters.reduce((a, c) => a + c.lessons.length, 0);
+    const readLessons = Object.keys(b.lessons || {}).length;
+    const lessonPct = totalLessons ? readLessons / totalLessons : 0;
+    const totalMcq = content.mcq.length;
+    const answeredMcq = Object.keys(b.qs || {}).length;
+    const quizPct = totalMcq ? Math.min(1, answeredMcq / totalMcq) : 0;
+    return Math.round((lessonPct * 0.5 + quizPct * 0.5) * 100);
+  }
+  // Fallback when content not loaded: use totalOk scaled to 200 (more realistic)
+  const totalOk = b.totalOk || 0; return Math.min(100, Math.round(totalOk / 2));
 }
 function subjectMastery(sid) {
   const b = S.sub[sid]; if (!b || !Object.keys(b.topics || {}).length) return null;
@@ -743,7 +756,7 @@ function vWelcome(m) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Hey" : "Good evening";
   let html = `<div style="max-width:700px;margin:0 auto">
-    <h1 class="board-h" style="font-size:32px">${greeting}, Malak! 👋</h1>
+    <h1 class="board-h" style="font-size:32px">${greeting}${S.userName ? ", " + esc(S.userName) : ""}! 👋</h1>
     <div class="flex" style="margin:4px 0 20px;gap:16px;flex-wrap:wrap">
       <span class="chip"><span class="flame ${gmet?"":"off"}">🔥</span> <b>${st}</b> day streak</span>
       <span class="chip">⭐ <b>${S.xp}</b> XP total · Lv ${levelInfo().n+1}</span>
@@ -1302,17 +1315,19 @@ function vMe(m) {
   <div class="sec">Badges</div><div class="badges">${BADGES.map(b => `<div class="badge ${S.badges[b[0]] ? "got" : ""}"><div class="ic">${b[1]}</div><b>${esc(b[2])}</b><small>${esc(b[3])}</small></div>`).join("")}</div>
   <div class="sec">Mock exams</div>${(bucket().mocks||[]).length ? `<div class="statgrid">${(bucket().mocks||[]).slice().reverse().map(x => `<div class="stat" style="${x.ok / x.n >= .7 ? "background:var(--g)" : "background:var(--p)"}"><span>${fmtDay(x.d)}</span><b>${Math.round(x.ok / x.n * 100)}%</b><span>${x.ok}/${x.n} · ${x.min} min</span></div>`).join("")}</div>` : `<p class="muted">No mock exams yet. Mock #1 is mission 10 of your plan.</p>`}
   <div class="sec">Settings</div><div class="sticky w" style="max-width:560px">
+   <div class="field"><label for="uname">Your name</label><input id="uname" placeholder="e.g. Malak" value="${esc(S.userName||'')}" style="width:100%"></div>
    <div class="field"><label for="ed1">Exam date</label><input type="date" id="ed1" value="${examDate()}"></div>
    <div class="field"><label for="gm">Daily goal (minutes)</label><select id="gm">${[10, 15, 20, 30, 45].map(v => `<option ${v === S.goalMin ? "selected" : ""}>${v}</option>`).join("")}</select></div>
    <label class="toggle"><input type="checkbox" id="snd" ${S.sound ? "checked" : ""}> Sounds</label>
-   <label class="toggle"><input type="checkbox" id="bon" ${S.bonus ? "checked" : ""}> Include PCAP-31-04 extras (turn off if your exam is 31-03)</label>
+   ${SUBJ?.id === "pcap" ? `<label class="toggle"><input type="checkbox" id="bon" ${S.bonus ? "checked" : ""}> Include PCAP-31-04 extras (turn off if your exam is 31-03)</label>` : ""}
    <label class="toggle" style="margin-top:6px"><span>Theme:</span><select id="th">${THEMES.map(([v, ic, name]) => `<option value="${v}" ${v === themePref ? "selected" : ""}>${ic} ${name}</option>`).join("")}</select></label>
    <p class="small muted" style="margin-top:10px">${syncState === "synced" ? "☁️ Progress syncs between your phone and laptop." : "💾 Progress is saved on this device. Sync available when signed in."}</p>
    <button class="btn red ghost" id="reset" style="margin-top:6px">Reset all progress</button></div>`;
   $("#ed1").onchange = e => { if (e.target.value) { bucket().examDate = e.target.value; if (SUBJ) SUBJ.examDate = e.target.value; save(true); refreshChrome(); toast("Exam date saved."); } };
   $("#gm").onchange = e => { S.goalMin = +e.target.value; save(true); };
   $("#snd").onchange = e => { S.sound = e.target.checked; save(true); };
-  $("#bon").onchange = e => { S.bonus = e.target.checked; save(true); };
+  const bonEl = $("#bon"); if (bonEl) bonEl.onchange = e => { S.bonus = e.target.checked; save(true); };
+  const unameEl = $("#uname"); if (unameEl) unameEl.onchange = e => { S.userName = e.target.value.trim(); save(true); toast("Name saved."); };
   $("#th").onchange = e => setTheme(e.target.value);
   $("#reset").onclick = () => { const mm = modal(`<h2>Reset everything?</h2><p>XP, streak, badges and all answers will be erased on every device.</p>`, `<button class="btn" data-close>Cancel</button><button class="btn red" data-really>Erase</button>`); mm.querySelector("[data-really]").onclick = () => { mm.remove(); const keep = { goalMin: S.goalMin }; S = Object.assign(fresh(), keep, { upd: Date.now(), resetAt: Date.now() }); save(true); render(); toast("Fresh start!"); }; };
 }

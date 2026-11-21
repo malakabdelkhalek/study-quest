@@ -58,11 +58,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: written answers + complete-the-code",
+          "label": "Flashcards: 15 cards",
           "chs": [
             "ch1"
           ],
-          "n": 20
+          "n": 15
         }
       ]
     },
@@ -99,11 +99,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: written answers + complete-the-code",
+          "label": "Flashcards: 13 cards",
           "chs": [
             "ch2"
           ],
-          "n": 20
+          "n": 13
         }
       ]
     },
@@ -141,11 +141,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: written + code",
+          "label": "Flashcards: 10 cards",
           "chs": [
             "ch3"
           ],
-          "n": 15
+          "n": 10
         }
       ]
     },
@@ -181,11 +181,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: admin exercises",
+          "label": "Flashcards: 4 cards",
           "chs": [
             "ch4"
           ],
-          "n": 8
+          "n": 4
         }
       ]
     },
@@ -222,11 +222,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: written + code",
+          "label": "Flashcards: 7 cards",
           "chs": [
             "ch5"
           ],
-          "n": 10
+          "n": 7
         }
       ]
     },
@@ -262,11 +262,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: written + code",
+          "label": "Flashcards: 6 cards",
           "chs": [
             "ch6"
           ],
-          "n": 10
+          "n": 6
         }
       ]
     },
@@ -303,11 +303,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: forms exercises",
+          "label": "Flashcards: 10 cards",
           "chs": [
             "ch7"
           ],
-          "n": 20
+          "n": 10
         }
       ]
     },
@@ -343,11 +343,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: ORM exercises",
+          "label": "Flashcards: 10 cards",
           "chs": [
             "ch8"
           ],
-          "n": 20
+          "n": 10
         }
       ]
     },
@@ -384,11 +384,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: CBV exercises",
+          "label": "Flashcards: 10 cards",
           "chs": [
             "ch9"
           ],
-          "n": 20
+          "n": 10
         }
       ]
     },
@@ -424,11 +424,11 @@
         },
         {
           "k": "cards",
-          "label": "Flashcards: auth exercises",
+          "label": "Flashcards: 10 cards",
           "chs": [
             "ch10"
           ],
-          "n": 20
+          "n": 10
         }
       ]
     }
@@ -2113,7 +2113,7 @@
       "ok": "{{ variable }}",
       "bad": [
         "<%= variable %>",
-        "{{ variable }}",
+        "${variable}",
         "<% variable %>"
       ],
       "why": "Django uses <code>{{ variable }}</code> for output and <code>{% tag %}</code> for logic. <code>&lt;%= %&gt;</code> is ERB (Ruby). <code>&lt;% %&gt;</code> is ASP/JSP. This was in the exam correction."
