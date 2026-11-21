@@ -2778,7 +2778,7 @@
             [
               "sticky",
               "{% extends %} must be LINE 1.\nAny content before it is silently discarded.\nThis is the most common beginner trap.",
-              "r"
+              "p"
             ]
           ]
         },
@@ -3435,7 +3435,7 @@
             [
               "sticky",
               "Without register(), the model is\ninvisible in admin — no error,\njust silently missing.",
-              "r"
+              "p"
             ]
           ]
         },
@@ -3543,7 +3543,7 @@
             [
               "sticky",
               "migrate BEFORE createsuperuser.\nOtherwise: no such table: auth_user",
-              "r"
+              "p"
             ],
             [
               "try",
@@ -3846,7 +3846,7 @@
             [
               "sticky",
               "SET_NULL without null=True\n→ IntegrityError at runtime!",
-              "r"
+              "p"
             ],
             [
               "try",
@@ -4059,7 +4059,7 @@
             [
               "sticky",
               "Exam Q1: 'What protects forms against CSRF?'\nAnswer: {% csrf_token %}",
-              "r"
+              "p"
             ],
             [
               "try",
