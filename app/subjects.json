@@ -18,5 +18,15 @@
     "examFormat": "Part 1 MCQ (6pts) · Part 2 written (6pts) · Part 3 code problem (8pts) · 1h30",
     "color": "green",
     "description": "Django web framework — models, views, templates, forms, ORM"
+  },
+  {
+    "id": "powerbi",
+    "name": "Power BI",
+    "icon": "📊",
+    "type": "theory",
+    "examDate": "",
+    "examFormat": "Practical TPs · Power Query · DAX · Reports",
+    "color": "orange",
+    "description": "Microsoft Power BI — data import, Power Query, DAX, visualizations"
   }
 ]

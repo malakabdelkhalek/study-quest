@@ -1,0 +1,945 @@
+{
+  "meta": {
+    "id": "powerbi",
+    "name": "Power BI",
+    "icon": "📊",
+    "type": "theory",
+    "examFormat": "Practical TPs · Power Query · DAX · Reports",
+    "color": "orange",
+    "description": "Microsoft Power BI — data import, Power Query, DAX, visualizations"
+  },
+  "examWeights": {
+    "ch1": 0.08,
+    "ch2": 0.1,
+    "ch3": 0.12,
+    "ch4": 0.12,
+    "ch5": 0.15,
+    "ch6": 0.1,
+    "ch7": 0.1,
+    "ch8": 0.13,
+    "ch9": 0.1
+  },
+  "mockCount": 30,
+  "topics": {
+    "pbi.orient": "Orientation — What is Power BI",
+    "pbi.interface": "Power BI Interface",
+    "pbi.data": "Data Fundamentals",
+    "pbi.types": "Data Types",
+    "pbi.import": "Importing Data",
+    "pbi.pq": "Power Query Editor",
+    "pbi.clean": "Data Cleaning",
+    "pbi.transform": "Transformations — Pivot / Unpivot / Transpose",
+    "pbi.m": "M Language",
+    "pbi.model": "Data Modeling",
+    "pbi.dax": "DAX — Measures & Calculated Columns",
+    "pbi.viz": "Reports & Visualizations"
+  },
+  "chapters": [
+    {
+      "id": "ch1",
+      "num": 1,
+      "title": "Orientation — What is Power BI and why does it exist?",
+      "lessons": [
+        {
+          "title": "1. What is Power BI?",
+          "t": "pbi.orient",
+          "html": "<ul><li><b>Power BI</b> is a business intelligence (BI) tool made by Microsoft. It lets you connect to data, clean it, model it, and turn it into interactive reports and dashboards.</li><li>It is used by analysts, students, and companies to <span class='y'>answer questions about their data visually</span> — instead of staring at rows of numbers in a spreadsheet.</li><li>Example: a sales manager wants to know which product sells best each month, in which region, compared to last year. Power BI turns a raw Excel file into an interactive chart they can click and filter in seconds.</li><li><b>Three parts of Power BI:</b><ul><li><b>Power BI Desktop</b> — the Windows app where you build everything. This is what you install and use for TPs.</li><li><b>Power BI Service</b> — a website (app.powerbi.com) where you publish and share reports.</li><li><b>Power BI Mobile</b> — a phone app to view published reports.</li></ul></li><li><span class='r'>Important:</span> Power BI Desktop only runs on <b>Windows</b>. For TPs you need a Windows machine. This course teaches you the concepts and logic so you can work in the real software confidently.</li></ul>"
+        },
+        {
+          "title": "2. Power BI vs Excel — what's the difference?",
+          "t": "pbi.orient",
+          "html": "<ul><li>Both tools work with data, but they are designed for different things.</li><li><b>Excel</b> = a spreadsheet. You manually type, edit, and calculate in cells. Good for small datasets, formulas in cells, one-off calculations.</li><li><b>Power BI</b> = a reporting engine. You <i>connect</i> to data (you don't edit it directly), clean it automatically, and build visual dashboards that update when the data changes.</li><li><b>Key differences:</b><ul><li>Excel struggles with millions of rows. Power BI handles them easily.</li><li>In Excel you change the data itself. In Power BI you write <i>transformation steps</i> that are re-applied every time the data refreshes.</li><li>Power BI reports are interactive — slicers, filters, drill-down. Excel charts are mostly static.</li><li>Power BI has a dedicated formula language (DAX) for calculations across tables. Excel uses cell formulas.</li></ul></li><li><span class='y'>When to use which:</span> Use Excel for quick personal analysis. Use Power BI when you need recurring reports, big data, or interactive dashboards for a team.</li></ul>"
+        },
+        {
+          "title": "3. The Power BI workflow — 4 stages",
+          "t": "pbi.orient",
+          "html": "<ul><li>Every Power BI project follows the same four stages. Understanding this before touching the software saves a lot of confusion.</li><li><b>Stage 1 — Connect:</b> Tell Power BI where your data lives (a CSV file, an Excel file, a website, a database). Power BI reads it without modifying the original.</li><li><b>Stage 2 — Transform (Power Query):</b> Clean and reshape the data before loading it. Remove junk rows, fix data types, rename columns, pivot/unpivot. This happens in the <b>Power Query Editor</b>.</li><li><b>Stage 3 — Model:</b> Define relationships between tables (like linking a sales table to a products table by product ID). This is the <b>Data Model</b>.</li><li><b>Stage 4 — Visualize:</b> Build charts, tables, and dashboards on the <b>Report canvas</b>. Add slicers so users can filter interactively.</li><li><span class='r'>Trap:</span> Many beginners skip Stage 2 and jump straight to building charts on messy data. The chart will be wrong. Always clean first.</li></ul>"
+        },
+        {
+          "title": "4. The Power BI Desktop interface",
+          "t": "pbi.interface",
+          "html": "<ul><li>When you open Power BI Desktop you see three main views, switched by icons on the left sidebar:</li><li><b>Report view</b> (default) — the canvas where you drag visuals and build your dashboard. Most of your time is here.</li><li><b>Data view</b> — shows your loaded tables as a spreadsheet. You can browse data and write calculated columns here.</li><li><b>Model view</b> — shows all your tables as boxes with lines connecting them. You manage relationships here.</li><li><b>The ribbon</b> at the top has tabs: Home, Insert, Modeling, View, Optimize, Help. Each tab shows relevant buttons.</li><li><b>The Filters pane</b> (right side) — add filters that apply to visuals, pages, or the whole report.</li><li><b>The Visualizations pane</b> (right side) — choose chart types and configure which fields go on which axis.</li><li><b>The Fields pane</b> (right side) — lists all your tables and columns. Drag them onto the canvas or into visuals.</li><li><span class='y'>Key button:</span> <b>Transform Data</b> in the Home ribbon — this opens the Power Query Editor where all data cleaning happens.</li></ul>"
+        },
+        {
+          "title": "5. What is Power Query?",
+          "t": "pbi.interface",
+          "html": "<ul><li><b>Power Query</b> is the data-preparation engine inside Power BI. It is where you clean, reshape, and transform your data before it enters the model.</li><li>Think of it as a <b>recorded set of instructions</b>. Every transformation you apply gets recorded as a step. When Power BI refreshes the data, it replays all those steps automatically.</li><li>Power Query has its own editor — the <b>Power Query Editor</b> — which opens as a separate window inside Power BI Desktop.</li><li><b>Key parts of the Power Query Editor:</b><ul><li><b>Queries pane</b> (left) — lists all your data sources (queries). Each imported file or table is one query.</li><li><b>Data preview</b> (centre) — shows the current state of the data after all applied steps.</li><li><b>Applied Steps pane</b> (right) — the list of every transformation you've done, in order. You can click any step to see what the data looked like at that point.</li><li><b>Formula bar</b> (top) — shows the M expression for the selected step.</li><li><b>Ribbon</b> — tabs for Home, Transform, Add Column, View.</li></ul></li><li><span class='r'>Trap:</span> Changes made in Power Query Editor are <b>not saved</b> to your report until you click <b>Close &amp; Apply</b>. If you close without applying, your changes are lost.</li></ul>"
+        },
+        {
+          "title": "6. M language — a first look",
+          "t": "pbi.m",
+          "html": "<ul><li>Everything you do in Power Query Editor generates code in a language called <b>M</b> (officially: Power Query Formula Language).</li><li>You don't need to write M yourself at first — the UI generates it for you. But reading it helps you understand what's happening and fix errors.</li><li>Every M query has the same structure:<pre><code>let\n    Source = Csv.Document(...),\n    Step2 = Table.PromoteHeaders(Source),\n    Step3 = Table.RemoveColumns(Step2, {\"OldCol\"})\nin\n    Step3</code></pre></li><li><code>let</code> starts the query. Each line defines a step — a name, then <code>=</code>, then what it does.</li><li><code>in</code> tells Power Query which step is the final output.</li><li>Each step uses the previous step's result as its input. This is why step order matters — delete a step in the middle and later steps break.</li><li><span class='y'>You will see M code in the formula bar when you click a step in Applied Steps.</span> You don't need to memorize syntax now — just understand the shape.</li></ul>"
+        },
+        {
+          "title": "7. DAX — a first look",
+          "t": "pbi.dax",
+          "html": "<ul><li><b>DAX</b> (Data Analysis Expressions) is Power BI's calculation language. You use it to write <b>measures</b> and <b>calculated columns</b> in the data model.</li><li>DAX is completely separate from M. M transforms data before it loads. DAX calculates on data after it loads.</li><li><b>Simple example:</b><pre><code>Total Sales = SUM(Sales[Amount])</code></pre>This measure adds up every value in the Amount column of the Sales table.</li><li><b>M vs DAX — when to use which:</b><ul><li>Use <b>M</b> (Power Query) for cleaning, reshaping, importing — anything that changes the shape or content of the table.</li><li>Use <b>DAX</b> for calculations, aggregations, comparisons — anything that computes a value from existing columns.</li></ul></li><li><span class='r'>Common beginner mistake:</span> Creating a calculated column in DAX when a transformation in Power Query would be cleaner and faster. If you're changing data structure — use Power Query. If you're calculating a new value from existing columns — use DAX.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch2",
+      "num": 2,
+      "title": "Data Fundamentals — tables, types, nulls, and messy data",
+      "lessons": [
+        {
+          "title": "1. What is data?",
+          "t": "pbi.data",
+          "html": "<ul><li><b>Data</b> = recorded facts or observations. A temperature reading, a sale amount, a student's grade, a product name — all data.</li><li>In Power BI, data almost always lives in <b>tables</b>. A table is a grid: rows going down, columns going across.</li><li><b>Row</b> (also called a record) = one complete observation. One sale, one student, one product.</li><li><b>Column</b> (also called a field or attribute) = one property shared by all rows. All the names, all the prices, all the dates.</li><li><b>Cell</b> = the intersection of one row and one column. Contains one value.</li><li><b>Header</b> = the first row of a table that names each column. Power BI needs headers to know what each column means.</li><li>Example — a sales table:<pre><code>OrderID | Product  | Amount | Date\n1       | Laptop   | 1200   | 2024-01-15\n2       | Mouse    | 25     | 2024-01-16\n3       | Keyboard | 45     | 2024-01-16</code></pre>3 rows, 4 columns, 12 cells.</li></ul>"
+        },
+        {
+          "title": "2. Structured vs unstructured data",
+          "t": "pbi.data",
+          "html": "<ul><li><b>Structured data</b> = data that fits neatly into rows and columns. CSV files, Excel tables, database tables. Power BI works best with structured data.</li><li><b>Unstructured data</b> = data with no fixed format. Emails, PDFs, images, free-text comments. Power BI cannot directly analyze this.</li><li><b>Semi-structured data</b> = has some structure but not a perfect table. JSON, XML, HTML pages. Power BI can import these but may need extra transformation.</li><li>Your professor's datasets are all <b>structured</b> — CSVs with clear rows and columns. This is the most common format in university TPs.</li><li><span class='y'>Rule of thumb:</span> If you can open it in Excel and it looks like a table, Power BI can import it directly. If it looks like a document or a web page, it needs more work.</li></ul>"
+        },
+        {
+          "title": "3. Data types — what kind of value is in each column?",
+          "t": "pbi.types",
+          "html": "<ul><li>Every column in Power BI has a <b>data type</b>. The type tells Power BI how to store, display, and calculate with that column's values.</li><li><b>Text</b> (called Whole Number, Decimal, Text, Date, etc. in the UI) — the most common types:</li><li><code>Text</code> — letters, words, names, codes. Cannot do math on it. <code>\"Laptop\"</code>, <code>\"Ahmed\"</code>.</li><li><code>Whole Number</code> — integers, no decimal point. <code>10</code>, <code>42</code>, <code>-5</code>.</li><li><code>Decimal Number</code> — numbers with decimal points. <code>3.14</code>, <code>19.99</code>.</li><li><code>Date</code> — a calendar date. <code>2024-01-15</code>. Enables time-intelligence calculations in DAX.</li><li><code>Date/Time</code> — date + time. <code>2024-01-15 09:30:00</code>.</li><li><code>True/False</code> — a boolean. Only two possible values.</li><li><span class='r'>Trap:</span> Power BI auto-detects types on import and often gets it wrong. A column of sales amounts stored as Text cannot be summed. Always check and correct data types in Power Query before loading.</li></ul>"
+        },
+        {
+          "title": "4. Null values — what does empty mean?",
+          "t": "pbi.types",
+          "html": "<ul><li><b>Null</b> = the absence of a value. Not zero, not an empty string — literally nothing. A cell that was never filled in.</li><li>Power BI shows nulls as <code>null</code> in the data preview (lowercase, grey).</li><li><b>Why nulls are a problem:</b><ul><li>A SUM of a column containing nulls ignores the nulls — sometimes that's right, sometimes it's wrong.</li><li>A filter for a specific value will not match nulls.</li><li>Joining two tables on a column with nulls produces unexpected results.</li></ul></li><li><b>What to do with nulls:</b><ul><li><b>Remove rows</b> that have nulls in critical columns.</li><li><b>Replace</b> nulls with a default value (e.g. 0 for sales amounts, \"Unknown\" for names).</li><li><b>Keep them</b> if the absence of data is itself meaningful.</li></ul></li><li><span class='r'>Trap:</span> <code>null</code> ≠ <code>0</code>. A product with 0 sales sold nothing. A product with null sales has no data recorded — that's different.</li></ul>"
+        },
+        {
+          "title": "5. Duplicates and dirty data",
+          "t": "pbi.data",
+          "html": "<ul><li><b>Duplicate rows</b> = the same record appearing more than once. If a sale is recorded twice, your total will be wrong.</li><li><b>Dirty data</b> = data with errors, inconsistencies, or junk. The most common types:</li><li><b>Inconsistent casing:</b> <code>laptop</code>, <code>Laptop</code>, <code>LAPTOP</code> — Power BI treats these as three different products.</li><li><b>Extra spaces:</b> <code>\"Laptop\"</code> vs <code>\" Laptop\"</code> — the leading space makes them different. Use <b>Trim</b> in Power Query to fix.</li><li><b>Wrong data type:</b> dates stored as text, numbers stored as text.</li><li><b>Merged fields:</b> <code>\"Ahmed Ben Ali\"</code> in one column instead of separate First Name / Last Name columns.</li><li><b>Inconsistent formats:</b> dates as <code>15/01/2024</code> in some rows and <code>2024-01-15</code> in others.</li><li><span class='y'>Rule:</span> Spend 70% of your Power BI project time cleaning data. A clean model with simple visuals is worth more than a beautiful dashboard built on dirty data.</li></ul>"
+        },
+        {
+          "title": "6. CSV files — your most common data source",
+          "t": "pbi.import",
+          "html": "<ul><li><b>CSV</b> = Comma-Separated Values. A plain text file where each line is a row and commas separate the columns.</li><li>Your professor's files are all CSVs. Example from <code>unpivot.csv</code>:<pre><code>Product,January,February,March,April\nLaptop,10,15,12,18\nMouse,30,25,40,35</code></pre></li><li>The first line is usually the header. Each subsequent line is one row.</li><li><b>Delimiter</b> = the character that separates values. Usually a comma, but can be a semicolon (<code>;</code>) in French/European files, or a tab.</li><li><span class='r'>Trap:</span> French Windows saves CSVs with <b>semicolons</b> as the delimiter (because commas are used as decimal separators in French). If your CSV looks like one giant column in Power BI, change the delimiter in the import dialog.</li><li><b>Encoding:</b> If you see strange characters like <code>Ã©</code> instead of <code>é</code>, the file is UTF-8 but Power BI loaded it as a different encoding. Change encoding to UTF-8 in the import settings.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch3",
+      "num": 3,
+      "title": "Importing Data — connecting Power BI to your files",
+      "lessons": [
+        {
+          "title": "1. Get Data — the starting point",
+          "t": "pbi.import",
+          "html": "<ul><li>Coming soon — full lesson in next build.</li></ul>"
+        },
+        {
+          "title": "2. Importing a CSV file",
+          "t": "pbi.import",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "3. Importing an Excel file",
+          "t": "pbi.import",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "4. Importing from a web page (HTML table)",
+          "t": "pbi.import",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "5. Load vs Transform Data",
+          "t": "pbi.import",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch4",
+      "num": 4,
+      "title": "Power Query Editor — the data-cleaning workspace",
+      "lessons": [
+        {
+          "title": "1. The Power Query Editor layout",
+          "t": "pbi.pq",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "2. Applied Steps — your transformation history",
+          "t": "pbi.pq",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "3. The formula bar and M expressions",
+          "t": "pbi.pq",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "4. Column operations — rename, remove, reorder",
+          "t": "pbi.clean",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "5. Row operations — filter, remove duplicates",
+          "t": "pbi.clean",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "6. Data type changes",
+          "t": "pbi.clean",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch5",
+      "num": 5,
+      "title": "Transformations — Pivot, Unpivot, Transpose with real data",
+      "lessons": [
+        {
+          "title": "1. Wide vs long format — the fundamental concept",
+          "t": "pbi.transform",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "2. Unpivot — wide to long (unpivot.csv)",
+          "t": "pbi.transform",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "3. Pivot — long to wide (pivot.csv)",
+          "t": "pbi.transform",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "4. Transpose — rows become columns (transpose.csv)",
+          "t": "pbi.transform",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "5. When to use which transformation",
+          "t": "pbi.transform",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch6",
+      "num": 6,
+      "title": "M Language — reading and writing Power Query code",
+      "lessons": [
+        {
+          "title": "1. What M is and why it exists",
+          "t": "pbi.m",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "2. let / in structure",
+          "t": "pbi.m",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "3. Common M functions",
+          "t": "pbi.m",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch7",
+      "num": 7,
+      "title": "Data Modeling — tables, keys, and relationships",
+      "lessons": [
+        {
+          "title": "1. What is a data model?",
+          "t": "pbi.model",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "2. Primary keys and foreign keys",
+          "t": "pbi.model",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "3. Star schema",
+          "t": "pbi.model",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch8",
+      "num": 8,
+      "title": "DAX — measures, calculated columns, and aggregations",
+      "lessons": [
+        {
+          "title": "1. What is DAX and when to use it",
+          "t": "pbi.dax",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "2. Measures vs calculated columns",
+          "t": "pbi.dax",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "3. SUM, AVERAGE, COUNT",
+          "t": "pbi.dax",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "4. CALCULATE — the most important DAX function",
+          "t": "pbi.dax",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        }
+      ]
+    },
+    {
+      "id": "ch9",
+      "num": 9,
+      "title": "Reports & Visualizations — building dashboards",
+      "lessons": [
+        {
+          "title": "1. Choosing the right chart",
+          "t": "pbi.viz",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "2. Slicers and filters",
+          "t": "pbi.viz",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        },
+        {
+          "title": "3. Report design principles",
+          "t": "pbi.viz",
+          "html": "<ul><li>Coming soon.</li></ul>"
+        }
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "id": "pc0",
+      "t": "pbi.orient",
+      "src": "ch1",
+      "ls": 0,
+      "lab": 1,
+      "ans": null,
+      "q": "What is Power BI Desktop and when do you use it?",
+      "code": null,
+      "out": "Power BI Desktop is the Windows application where you build reports — importing data, cleaning it in Power Query, modeling relationships, and creating visuals. You use it to author reports before publishing.",
+      "why": "Power BI Desktop is the authoring tool. Everything else (Service, Mobile) is for sharing and viewing."
+    },
+    {
+      "id": "pc1",
+      "t": "pbi.orient",
+      "src": "ch1",
+      "ls": 2,
+      "lab": 1,
+      "ans": null,
+      "q": "Name the 4 stages of a Power BI project in order.",
+      "code": null,
+      "out": "1. Connect — link to data source\n2. Transform — clean/reshape in Power Query\n3. Model — define table relationships\n4. Visualize — build charts and dashboards",
+      "why": "This order matters. Never skip Transform — dirty data produces wrong visuals."
+    },
+    {
+      "id": "pc2",
+      "t": "pbi.interface",
+      "src": "ch1",
+      "ls": 3,
+      "lab": 1,
+      "ans": null,
+      "q": "What are the three views in Power BI Desktop's left sidebar?",
+      "code": null,
+      "out": "Report view — build visuals on the canvas\nData view — browse loaded tables\nModel view — manage relationships between tables",
+      "why": "Each view serves a different stage of work. Most time is spent in Report view."
+    },
+    {
+      "id": "pc3",
+      "t": "pbi.interface",
+      "src": "ch1",
+      "ls": 4,
+      "lab": 1,
+      "ans": null,
+      "q": "What happens if you close the Power Query Editor without clicking 'Close & Apply'?",
+      "code": null,
+      "out": "Your changes are discarded — none of the transformations you made are saved to the report.",
+      "why": "Close & Apply is the commit step. Without it, Power Query changes are temporary."
+    },
+    {
+      "id": "pc4",
+      "t": "pbi.m",
+      "src": "ch1",
+      "ls": 5,
+      "lab": 1,
+      "ans": null,
+      "q": "Complete the M query structure:\n___(1)___\n    Source = Csv.Document(...),\n    Clean = Table.PromoteHeaders(Source)\n___(2)___\n    Clean",
+      "code": null,
+      "out": "(1) let\n(2) in",
+      "why": "Every M query starts with 'let' (define steps) and ends with 'in StepName' (declare output)."
+    },
+    {
+      "id": "pc5",
+      "t": "pbi.dax",
+      "src": "ch1",
+      "ls": 6,
+      "lab": 1,
+      "ans": null,
+      "q": "When should you use Power Query (M) vs DAX?",
+      "code": null,
+      "out": "Power Query (M): changing the shape or content of data before it loads — cleaning, filtering, pivoting, type changes.\nDAX: calculating values from already-loaded data — sums, averages, conditional calculations.",
+      "why": "Using DAX to do what Power Query should do bloats the model and slows performance."
+    },
+    {
+      "id": "pc6",
+      "t": "pbi.data",
+      "src": "ch2",
+      "ls": 0,
+      "lab": 2,
+      "ans": null,
+      "q": "A table has 4 rows and 3 columns. How many cells? What is each row called?",
+      "code": null,
+      "out": "12 cells (4 × 3).\nEach row is called a record.",
+      "why": "Row = record = one complete observation. Column = field = one attribute shared by all records."
+    },
+    {
+      "id": "pc7",
+      "t": "pbi.types",
+      "src": "ch2",
+      "ls": 2,
+      "lab": 2,
+      "ans": null,
+      "q": "List 4 Power BI data types and give one example value for each.",
+      "code": null,
+      "out": "Text: 'Laptop'\nWhole Number: 42\nDecimal Number: 19.99\nDate: 2024-01-15",
+      "why": "Choosing the wrong type blocks calculations. Prices as Text cannot be summed. Dates as Text lose calendar intelligence."
+    },
+    {
+      "id": "pc8",
+      "t": "pbi.types",
+      "src": "ch2",
+      "ls": 3,
+      "lab": 2,
+      "ans": null,
+      "q": "What does null mean in Power BI, and how is it different from 0?",
+      "code": null,
+      "out": "null = no value was recorded (absence of data).\n0 = a real recorded value of zero.\nSUM ignores nulls but includes zeros.",
+      "why": "Replacing null with 0 is wrong when missing data is not the same as zero sales."
+    },
+    {
+      "id": "pc9",
+      "t": "pbi.data",
+      "src": "ch2",
+      "ls": 4,
+      "lab": 2,
+      "ans": null,
+      "q": "Name 3 types of dirty data and how to fix each in Power Query.",
+      "code": null,
+      "out": "1. Inconsistent casing ('laptop' vs 'Laptop') → Transform → Capitalize Each Word\n2. Extra spaces (' Laptop') → Transform → Trim\n3. Wrong data type (prices as Text) → Change Type → Decimal Number",
+      "why": "These three issues cause wrong counts, broken relationships, and failed calculations."
+    },
+    {
+      "id": "pc10",
+      "t": "pbi.import",
+      "src": "ch2",
+      "ls": 5,
+      "lab": 2,
+      "ans": null,
+      "q": "Your CSV shows all data in one column separated by semicolons. What do you change?",
+      "code": null,
+      "out": "Change the delimiter from comma to semicolon in the CSV import dialog (Get Data → Text/CSV → Edit → Delimiter).",
+      "why": "French/European CSVs use semicolons. Power BI defaults to comma. This is the most common CSV import problem."
+    }
+  ],
+  "mcq": [
+    {
+      "id": "pq0",
+      "t": "pbi.orient",
+      "q": "What are the three products that make up Power BI?",
+      "code": null,
+      "ok": "Power BI Desktop, Power BI Service, Power BI Mobile",
+      "bad": [
+        "Power Query, DAX, Power Pivot",
+        "Power BI Desktop, Excel, SQL Server",
+        "Power BI Studio, Power BI Online, Power BI App"
+      ],
+      "why": "Power BI Desktop is the Windows authoring tool. Power BI Service is the web publishing platform. Power BI Mobile is the phone viewer."
+    },
+    {
+      "id": "pq1",
+      "t": "pbi.orient",
+      "q": "What are the four stages of a Power BI project in order?",
+      "code": null,
+      "ok": "Connect → Transform → Model → Visualize",
+      "bad": [
+        "Visualize → Model → Transform → Connect",
+        "Import → Clean → Report → Publish",
+        "Connect → Model → Transform → Visualize"
+      ],
+      "why": "You always connect to data first, then transform/clean it in Power Query, then build the data model, then create visuals. Skipping Transform is the most common beginner mistake."
+    },
+    {
+      "id": "pq2",
+      "t": "pbi.orient",
+      "q": "You receive a CSV from your professor and want to remove blank rows and fix column types before building any chart. Where do you do this?",
+      "code": null,
+      "ok": "Power Query Editor",
+      "bad": [
+        "The Report canvas",
+        "The Data view",
+        "The Model view"
+      ],
+      "why": "Power Query Editor is the dedicated data-preparation workspace. The Report canvas is for visuals, Data view for browsing loaded data, Model view for relationships."
+    },
+    {
+      "id": "pq3",
+      "t": "pbi.orient",
+      "q": "What is the main advantage of Power BI over Excel for recurring reports?",
+      "code": null,
+      "ok": "Transformations are saved as steps and re-applied automatically when data refreshes",
+      "bad": [
+        "Power BI has more chart types",
+        "Power BI formulas are simpler than Excel formulas",
+        "Power BI works on Mac and Windows"
+      ],
+      "why": "Power Query records every cleaning step. When new data arrives, all steps replay automatically. In Excel you would re-do the cleaning manually every time."
+    },
+    {
+      "id": "pq4",
+      "t": "pbi.interface",
+      "q": "You click 'Transform Data' in the Home ribbon. What opens?",
+      "code": null,
+      "ok": "The Power Query Editor",
+      "bad": [
+        "The DAX formula editor",
+        "The Model view",
+        "A new report page"
+      ],
+      "why": "Transform Data is the entry point to Power Query Editor, where data cleaning and reshaping happens."
+    },
+    {
+      "id": "pq5",
+      "t": "pbi.interface",
+      "q": "In Power Query Editor, where do you see every transformation you have applied, in order?",
+      "code": null,
+      "ok": "The Applied Steps pane (Query Settings, right side)",
+      "bad": [
+        "The Formula bar",
+        "The Queries pane (left side)",
+        "The Data preview (centre)"
+      ],
+      "why": "Applied Steps lists every transformation as a named step. Clicking a step shows the data at that point in the transformation chain."
+    },
+    {
+      "id": "pq6",
+      "t": "pbi.m",
+      "q": "In M language, what does the 'in' keyword indicate?",
+      "code": "let\n    Source = Csv.Document(...),\n    Clean = Table.PromoteHeaders(Source)\nin\n    Clean",
+      "ok": "The final step — the output that Power Query returns",
+      "bad": [
+        "The first step — the data source",
+        "A loop over each row",
+        "An import statement"
+      ],
+      "why": "Every M query ends with 'in StepName'. That step's result is what gets loaded into the model. The 'let' block defines all the intermediate steps."
+    },
+    {
+      "id": "pq7",
+      "t": "pbi.dax",
+      "q": "You need to add up all values in a Sales[Amount] column. Where do you write this and what language do you use?",
+      "code": null,
+      "ok": "In the Data or Report view, using DAX: Total = SUM(Sales[Amount])",
+      "bad": [
+        "In Power Query Editor, using M: Table.Sum(Source, \"Amount\")",
+        "In a cell on the Report canvas, using Excel syntax: =SUM(Amount)",
+        "In the Model view, using SQL: SELECT SUM(Amount) FROM Sales"
+      ],
+      "why": "DAX measures are written in the Data or Report view. SUM is a DAX aggregation function. M is for transformations in Power Query, not for calculations in the model."
+    },
+    {
+      "id": "pq8",
+      "t": "pbi.data",
+      "q": "In a table with 50 rows and 4 columns, how many cells are there?",
+      "code": null,
+      "ok": "200",
+      "bad": [
+        "54",
+        "50",
+        "4"
+      ],
+      "why": "Cells = rows × columns = 50 × 4 = 200. Each cell holds one value."
+    },
+    {
+      "id": "pq9",
+      "t": "pbi.types",
+      "q": "Power BI auto-detects a column of product prices as Text instead of Decimal Number. What is the consequence?",
+      "code": null,
+      "ok": "You cannot sum or average the column — calculations will fail or return errors",
+      "bad": [
+        "The column disappears from the Fields pane",
+        "Power BI automatically converts it when you use SUM",
+        "The column is hidden in the report"
+      ],
+      "why": "Text columns cannot be aggregated mathematically. SUM(Price) on a Text column returns an error. You must change the data type to Decimal Number in Power Query first."
+    },
+    {
+      "id": "pq10",
+      "t": "pbi.types",
+      "q": "What is the difference between null and 0 in a Sales column?",
+      "code": null,
+      "ok": "null means no data was recorded; 0 means the product sold zero units",
+      "bad": [
+        "They are identical — Power BI treats both as zero",
+        "null means the row should be deleted",
+        "0 is an error; null is the correct empty value"
+      ],
+      "why": "null = absence of data. 0 = a real recorded value of zero. Treating them the same gives wrong totals and misleading analysis."
+    },
+    {
+      "id": "pq11",
+      "t": "pbi.data",
+      "q": "Your CSV has 'laptop', 'Laptop', and 'LAPTOP' as values in the Product column. How many distinct products does Power BI see?",
+      "code": null,
+      "ok": "3 — text comparison is case-sensitive by default",
+      "bad": [
+        "1 — Power BI normalizes text automatically",
+        "2 — it ignores all-caps duplicates",
+        "It depends on the data type setting"
+      ],
+      "why": "Power BI treats text as case-sensitive. 'laptop', 'Laptop', and 'LAPTOP' are three different values. Use Transform → Capitalize Each Word or lowercase in Power Query to standardize."
+    },
+    {
+      "id": "pq12",
+      "t": "pbi.import",
+      "q": "You open a French CSV and all data appears in a single column separated by semicolons. What is the most likely cause?",
+      "code": null,
+      "ok": "The file uses semicolons as delimiters, but Power BI defaulted to comma",
+      "bad": [
+        "The file is corrupted",
+        "The encoding is wrong",
+        "Power BI cannot read French files"
+      ],
+      "why": "French/European CSV files use semicolons as separators because commas are used as decimal points in French notation. Change the delimiter in the CSV import dialog."
+    },
+    {
+      "id": "pq13",
+      "t": "pbi.data",
+      "q": "Which of these is an example of structured data?",
+      "code": null,
+      "ok": "A CSV file with columns: OrderID, Product, Amount, Date",
+      "bad": [
+        "A PDF report with paragraphs of text",
+        "An email from a client",
+        "A folder of product images"
+      ],
+      "why": "Structured data has a defined schema: rows and columns with consistent types. CSVs, Excel tables, and database tables are structured. PDFs, emails, and images are unstructured."
+    },
+    {
+      "id": "pq14",
+      "t": "pbi.types",
+      "q": "Which data type should you use for a column of dates like '2024-01-15'?",
+      "code": null,
+      "ok": "Date — this enables time-intelligence DAX functions like year-over-year comparison",
+      "bad": [
+        "Text — dates are just strings",
+        "Whole Number — dates are stored as numbers internally",
+        "Decimal Number — to allow partial days"
+      ],
+      "why": "Power BI's Date type understands calendar hierarchy (year, quarter, month, day) and enables time-intelligence DAX functions. Storing dates as Text loses all of this."
+    }
+  ],
+  "boards": [
+    {
+      "id": "pbi1",
+      "ch": "ch1",
+      "t": "pbi.orient",
+      "title": "Power BI in 4 steps — the full workflow",
+      "steps": [
+        {
+          "say": "Before touching any button in Power BI, you need to understand the four stages every project goes through. This is the map — learn it and you'll never be lost.",
+          "add": [
+            [
+              "h",
+              "The 4-stage Power BI workflow"
+            ],
+            [
+              "w",
+              "{b:Stage 1 — Connect} Link Power BI to your data: a CSV file, an Excel file, a website, a database."
+            ],
+            [
+              "w",
+              "{b:Stage 2 — Transform} Open Power Query Editor. Clean the data: fix types, remove blanks, rename columns, reshape."
+            ],
+            [
+              "w",
+              "{b:Stage 3 — Model} Define how tables relate to each other (like a sales table linked to a products table by Product ID)."
+            ],
+            [
+              "w",
+              "{b:Stage 4 — Visualize} Drag fields onto the canvas. Choose chart types. Add slicers. Build the dashboard."
+            ],
+            [
+              "sticky",
+              "The most skipped stage:\nStage 2 — Transform.\nDirty data = wrong visuals.\nAlways clean before you build.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "Here's how to open each stage in the real software. Memorize where each tool lives.",
+          "add": [
+            [
+              "h",
+              "Where to find each stage in Power BI Desktop"
+            ],
+            [
+              "w",
+              "{b:Connect} → Home ribbon → Get Data → choose your file type"
+            ],
+            [
+              "w",
+              "{b:Transform} → Home ribbon → Transform Data → opens Power Query Editor"
+            ],
+            [
+              "w",
+              "{b:Model} → Left sidebar → Model view icon (third icon)"
+            ],
+            [
+              "w",
+              "{b:Visualize} → Left sidebar → Report view icon (first icon, default)"
+            ],
+            [
+              "sticky",
+              "Transform Data button\nis in the Home ribbon.\nThis opens Power Query Editor.\nRemember this — it's where\nall cleaning happens.",
+              "b"
+            ],
+            [
+              "try",
+              {
+                "q": "Your professor gave you a CSV with messy column names and wrong data types. Which stage do you work in first?",
+                "code": null,
+                "ok": "Stage 2 — Transform, in Power Query Editor",
+                "bad": [
+                  "Stage 4 — Visualize, fix it in the chart settings",
+                  "Stage 3 — Model, change types in the relationship view",
+                  "Stage 1 — Connect, re-import with different settings"
+                ],
+                "why": "Data type errors and column names are cleaned in Power Query (Stage 2). You must fix them before the data loads into the model."
+              }
+            ]
+          ]
+        },
+        {
+          "say": "Now let's lock in the difference between M and DAX — two languages, two totally different jobs.",
+          "add": [
+            [
+              "h",
+              "M vs DAX — two languages, different jobs"
+            ],
+            [
+              "w",
+              "{b:M (Power Query)} runs BEFORE data loads. Changes the shape and content of tables."
+            ],
+            [
+              "w",
+              "{b:DAX} runs AFTER data loads. Calculates values from existing columns."
+            ],
+            [
+              "code",
+              "-- M example (Power Query, reshaping):\nTable.RemoveColumns(Source, {\"Junk\"})\n\n-- DAX example (measure, calculation):\nTotal Sales = SUM(Sales[Amount])",
+              {}
+            ],
+            [
+              "sticky",
+              "If the question is\n'what does the table look like?'\n→ Power Query (M).\nIf the question is\n'what does this number equal?'\n→ DAX.",
+              "g"
+            ],
+            [
+              "try",
+              {
+                "q": "You want to calculate the average sale amount per product. Which language do you use?",
+                "code": null,
+                "ok": "DAX — write a measure: Avg Sale = AVERAGE(Sales[Amount])",
+                "bad": [
+                  "M — add a custom column in Power Query with the average",
+                  "SQL — query the table directly",
+                  "Neither — use a chart aggregation setting instead"
+                ],
+                "why": "DAX measures calculate values from loaded data. AVERAGE is a DAX function. Power Query M is for transforming the table structure, not for business calculations."
+              }
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pbi2",
+      "ch": "ch2",
+      "t": "pbi.data",
+      "title": "Data types and dirty data — the hidden cause of wrong answers",
+      "steps": [
+        {
+          "say": "Most Power BI errors aren't about formulas — they're about data types. A price column stored as Text is the most common cause of broken calculations in university TPs.",
+          "add": [
+            [
+              "h",
+              "The 5 types you must know"
+            ],
+            [
+              "w",
+              "{b:Text} → words, names, codes. 'Laptop', 'Ahmed'. Cannot do math."
+            ],
+            [
+              "w",
+              "{b:Whole Number} → integers. 10, 42, -5."
+            ],
+            [
+              "w",
+              "{b:Decimal Number} → decimals. 19.99, 3.14. Use for prices."
+            ],
+            [
+              "w",
+              "{b:Date} → calendar dates. 2024-01-15. Enables time calculations."
+            ],
+            [
+              "w",
+              "{b:True/False} → boolean. Only two values."
+            ],
+            [
+              "sticky",
+              "Power BI auto-detects types\non import and often gets\nprices wrong (Text instead\nof Decimal). Always check\nthe type icon on each column.",
+              "p"
+            ]
+          ]
+        },
+        {
+          "say": "Now the three dirty-data problems that appear in almost every TP. Recognize them and fix them in Power Query.",
+          "add": [
+            [
+              "h",
+              "The 3 most common dirty-data problems"
+            ],
+            [
+              "w",
+              "{b:Problem 1 — Inconsistent casing:} 'laptop', 'Laptop', 'LAPTOP' → 3 different products."
+            ],
+            [
+              "w",
+              "{b:Fix:} Transform tab → Format → Capitalize Each Word (or Lowercase)."
+            ],
+            [
+              "w",
+              "{b:Problem 2 — Leading/trailing spaces:} ' Laptop' ≠ 'Laptop'."
+            ],
+            [
+              "w",
+              "{b:Fix:} Transform tab → Format → Trim."
+            ],
+            [
+              "w",
+              "{b:Problem 3 — Wrong data type:} Sales amounts stored as Text."
+            ],
+            [
+              "w",
+              "{b:Fix:} Click the column header type icon → change to Decimal Number."
+            ],
+            [
+              "sticky",
+              "null ≠ 0.\nnull = no data recorded.\n0 = sold zero units.\nNever replace null\nwith 0 without checking.",
+              "y"
+            ],
+            [
+              "try",
+              {
+                "q": "Your SUM(Sales[Amount]) measure returns an error. The most likely cause is?",
+                "code": null,
+                "ok": "The Amount column has data type Text instead of Decimal Number",
+                "bad": [
+                  "The measure formula is wrong — SUM needs two arguments",
+                  "The Sales table is not in the model",
+                  "The column name has a space in it"
+                ],
+                "why": "SUM only works on numeric columns. If Amount is Text, DAX cannot aggregate it. Fix the type in Power Query Editor before closing and applying."
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "missions": [
+    {
+      "title": "Orientation — what Power BI is and how it works",
+      "sub": "workflow, interface, Power Query vs DAX",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 7 orientation lessons",
+          "ch": "ch1",
+          "from": 0,
+          "to": 6
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: board 1",
+          "ids": [
+            "pbi1"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 8 questions",
+          "pick": {
+            "ts": [
+              "pbi.orient",
+              "pbi.interface"
+            ]
+          },
+          "n": 8,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 6 cards",
+          "chs": [
+            "ch1"
+          ],
+          "n": 6
+        }
+      ]
+    },
+    {
+      "title": "Data fundamentals",
+      "sub": "tables, types, nulls, CSVs, dirty data",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 6 data lessons",
+          "ch": "ch2",
+          "from": 0,
+          "to": 5
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: board 2",
+          "ids": [
+            "pbi2"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 8 questions",
+          "pick": {
+            "ts": [
+              "pbi.data",
+              "pbi.types",
+              "pbi.import"
+            ]
+          },
+          "n": 8,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 5 cards",
+          "chs": [
+            "ch2"
+          ],
+          "n": 5
+        }
+      ]
+    }
+  ]
+}
