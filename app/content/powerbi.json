@@ -122,27 +122,27 @@
         {
           "title": "1. Get Data — the starting point",
           "t": "pbi.import",
-          "html": "<ul><li>Coming soon — full lesson in next build.</li></ul>"
+          "html": "<ul><li><b>Get Data</b> is in the Home ribbon. Click it and a dialog lists every source type: CSV, Excel, Web, SQL Server, and more.</li><li><b>Most common for TPs:</b> Text/CSV, Excel Workbook, Web (URL), SQL Server.</li><li>After selecting a source, Power BI previews the data and offers two buttons: <b>Load</b> or <b>Transform Data</b>.</li><li><span class='r'>Rule:</span> Almost always choose <b>Transform Data</b> — it opens Power Query Editor so you clean before loading. Load skips cleaning entirely.</li></ul>"
         },
         {
           "title": "2. Importing a CSV file",
           "t": "pbi.import",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Steps:</b> Home → Get Data → Text/CSV → browse to file → Open.</li><li>In the preview dialog check: <b>File Origin</b> (UTF-8 for French files), <b>Delimiter</b> (Comma by default; change to Semicolon for French CSVs), then click <b>Transform Data</b>.</li><li><b>Your three professor CSVs</b> (pivot.csv, unpivot.csv, transpose.csv) all use comma delimiter and UTF-8 — defaults work.</li><li><span class='r'>Trap:</span> French Windows saves CSVs with <b>semicolons</b> as separator. If all data appears in one column, change the delimiter.</li></ul>"
         },
         {
           "title": "3. Importing an Excel file",
           "t": "pbi.import",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>Home → Get Data → Excel Workbook → select file. A <b>Navigator</b> dialog shows all sheets and named tables.</li><li>Prefer named <b>Tables</b> over sheets — they don't include junk rows above the data.</li><li>Click Transform Data to open Power Query.</li><li><span class='r'>Trap:</span> Excel files with merged cells, logos, or title rows above data import junk. Remove top rows in Power Query: Home → Remove Rows → Remove Top Rows.</li></ul>"
         },
         {
-          "title": "4. Importing from a web page (HTML table)",
+          "title": "4. Importing from a web page",
           "t": "pbi.import",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>Home → Get Data → Web → paste URL → OK. Power BI fetches the page and shows all tables found.</li><li><b>Your professor provided this URL for practice:</b><br><code>https://publicholiday.co.nz/nz-public-holidays-2021.html</code><br>It has a table of NZ public holidays — import it and practice changing the Date column type, removing columns, and sorting.</li><li><span class='r'>Trap:</span> Web sources break if the page changes structure. This is normal — web import is less stable than file import.</li></ul>"
         },
         {
-          "title": "5. Load vs Transform Data",
+          "title": "5. Load vs Transform Data — the critical choice",
           "t": "pbi.import",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Load</b> → imports immediately with Power BI's guessed types. Fast but risky.</li><li><b>Transform Data</b> → opens Power Query Editor. You clean before loading. Always safer.</li><li>When done in Power Query: <b>Close &amp; Apply</b> saves all steps and loads data. <b>Close</b> (without Apply) discards all changes.</li><li><span class='y'>Habit:</span> Always choose Transform Data on import. Check types. Remove junk. Click Close &amp; Apply. Then build visuals.</li></ul>"
         }
       ]
     },
@@ -154,32 +154,32 @@
         {
           "title": "1. The Power Query Editor layout",
           "t": "pbi.pq",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>Power Query Editor has 5 zones:</li><li><b>Queries pane (left)</b> — lists every query. Each CSV/Excel/web table is one query.</li><li><b>Data preview (centre)</b> — current state of data after all applied steps.</li><li><b>Formula bar</b> — M expression for the selected step.</li><li><b>Query Settings pane (right)</b> — query name (Properties) + Applied Steps list.</li><li><b>Ribbon (top)</b> — four tabs: Home, Transform, Add Column, View.</li></ul>"
         },
         {
           "title": "2. Applied Steps — your transformation history",
           "t": "pbi.pq",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>Applied Steps records every transformation as a named step. Auto-created steps on import: <code>Source</code>, <code>Promoted Headers</code>, <code>Changed Type</code>.</li><li><b>Click a step</b> → preview data at that point. <b>Delete (✕)</b> → remove the transformation. <b>Rename</b> → double-click the name.</li><li><span class='r'>Trap:</span> Deleting a step that a later step depends on breaks those later steps with a formula error.</li></ul>"
         },
         {
-          "title": "3. The formula bar and M expressions",
+          "title": "3. The formula bar and reading M",
           "t": "pbi.pq",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li>Click any step → formula bar shows the M expression:<pre><code>= Table.RemoveColumns(#\"Previous Step\", {\"OldColumn\"})</code></pre></li><li>You don't write M from scratch yet — the UI generates it. But reading it helps you understand and debug.</li><li><b>Advanced Editor</b> (Home → Advanced Editor) shows the full M script for editing directly.</li><li><span class='y'>Habit:</span> After every transformation, click the step and read the formula bar. This is how you learn M naturally.</li></ul>"
         },
         {
-          "title": "4. Column operations — rename, remove, reorder",
+          "title": "4. Essential column operations",
           "t": "pbi.clean",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Rename:</b> double-click column header.</li><li><b>Remove:</b> right-click header → Remove. Or keep what you want: right-click → Remove Other Columns.</li><li><b>Change type:</b> click the type icon left of column name → select new type. <span class='r'>Always do this — never rely on auto-detect.</span></li><li><b>Split column:</b> Transform → Split Column → By Delimiter.</li><li><b>Merge columns:</b> Ctrl+click two columns → Add Column → Merge Columns.</li><li><span class='y'>Tip:</span> Use Remove Other Columns (keep what you want) when there are many junk columns — fewer clicks.</li></ul>"
         },
         {
-          "title": "5. Row operations — filter, remove duplicates",
+          "title": "5. Essential row operations",
           "t": "pbi.clean",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Filter rows:</b> dropdown arrow on column header → check/uncheck values.</li><li><b>Remove top N rows:</b> Home → Remove Rows → Remove Top Rows → enter N.</li><li><b>Remove blank rows:</b> Home → Remove Rows → Remove Blank Rows (removes rows where ALL cells are null).</li><li><b>Remove duplicates:</b> select column(s) → right-click → Remove Duplicates.</li><li><span class='r'>Trap:</span> Remove Blank Rows only removes rows where EVERY cell is null. Use Filter Rows on a specific column to remove rows with null in that column.</li></ul>"
         },
         {
-          "title": "6. Data type changes",
+          "title": "6. Replacing values, Trim, and Fill",
           "t": "pbi.clean",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Replace Values:</b> Transform → Replace Values. Leave 'Value to Find' empty to replace nulls.</li><li><b>Trim:</b> Transform → Format → Trim. Removes leading/trailing spaces.</li><li><b>Capitalize Each Word:</b> Transform → Format → Capitalize Each Word. Fixes 'laptop'/'LAPTOP'/'Laptop'.</li><li><b>Fill Down:</b> Transform → Fill → Down. Fills null cells with the value above them.</li><li><span class='y'>Order matters:</span> Trim before comparing. Capitalize before deduplicating. Change type before filtering by number range.</li></ul>"
         }
       ]
     },
@@ -191,27 +191,27 @@
         {
           "title": "1. Wide vs long format — the fundamental concept",
           "t": "pbi.transform",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Wide format:</b> each category gets its own column. Easy to read, hard for Power BI.<pre><code>Product  | January | February | March\nLaptop   |      10 |       15 |    12</code></pre></li><li><b>Long format:</b> one column for the category name, one for the value. Power BI works best with this.<pre><code>Product  | Month    | Sales\nLaptop   | January  |    10\nLaptop   | February |    15</code></pre></li><li><span class='y'>Rule:</span> If months, years, or categories are column headers → they're values → Unpivot to make them rows.</li></ul>"
         },
         {
           "title": "2. Unpivot — wide to long (unpivot.csv)",
           "t": "pbi.transform",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>unpivot.csv</b> has months as columns. Problem: you can't filter by month in a chart.<pre><code>Product  | January | February | March | April\nLaptop   |      10 |       15 |    12 |    18</code></pre></li><li><b>Steps:</b><ol><li>Ctrl+click January, February, March, April headers.</li><li>Right-click → Unpivot Columns.</li><li>Rename Attribute → Month, Value → Sales.</li></ol></li><li><b>Result:</b> 20 rows (5 products × 4 months).<pre><code>Product  | Month    | Sales\nLaptop   | January  |    10\nLaptop   | February |    15</code></pre></li><li><span class='r'>Trap:</span> Select ONLY the month columns. If you include Product, it also becomes rows — wrong.</li></ul>"
         },
         {
           "title": "3. Pivot — long to wide (pivot.csv)",
           "t": "pbi.transform",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>pivot.csv</b> is in long format. Goal: make each month a column for a comparison report.<pre><code>Product  | Month    | Sales\nLaptop   | January  |    10\nMouse    | January  |    30</code></pre></li><li><b>Steps:</b><ol><li>Click the Month column header.</li><li>Transform → Pivot Column.</li><li>Values Column = Sales. Aggregate = Sum.</li><li>Click OK.</li></ol></li><li><b>Result:</b> 4 rows (one per product), one column per month.<pre><code>Product  | January | February | March\nLaptop   |      10 |       15 |    12</code></pre></li><li><span class='r'>Trap:</span> Pivot on the column whose values become headers (Month), not the values column (Sales).</li></ul>"
         },
         {
           "title": "4. Transpose — rows become columns (transpose.csv)",
           "t": "pbi.transform",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>transpose.csv:</b> subjects are columns, students are rows. After transpose, subjects become rows.<pre><code>BEFORE:\nStudent | Math | Physics | CS\nAhmed   |   15 |      14 | 18\n\nAFTER (then promote headers):\nSubject  | Ahmed | Sara | Youssef | Mariam\nMath     |    15 |   17 |      12 |     18\nPhysics  |    14 |   16 |      13 |     17</code></pre></li><li><b>Steps:</b><ol><li>Transform → Transpose.</li><li>Home → Use First Row as Headers.</li><li>Rename Column1 → Subject.</li></ol></li><li><span class='r'>Always</span> use First Row as Headers after Transpose — the original headers move to row 1.</li></ul>"
         },
         {
           "title": "5. When to use which transformation",
           "t": "pbi.transform",
-          "html": "<ul><li>Coming soon.</li></ul>"
+          "html": "<ul><li><b>Unpivot:</b> column headers are values (months, years, categories) → need them as rows for filtering/charting.</li><li><b>Pivot:</b> a category column's values should become column headers → comparison table.</li><li><b>Transpose:</b> the whole table is rotated the wrong way — rows should be columns and vice versa.</li><li><b>Quick test:</b><ul><li>Are column headers actually values? → <b>Unpivot</b></li><li>Spread a column's values into headers? → <b>Pivot</b></li><li>Whole table oriented wrong? → <b>Transpose</b></li></ul></li><li><span class='y'>Real TP tip:</span> Your professor's filenames tell you the operation: unpivot.csv → Unpivot, pivot.csv → Pivot, transpose.csv → Transpose.</li></ul>"
         }
       ]
     },
@@ -441,6 +441,102 @@
       "code": null,
       "out": "Change the delimiter from comma to semicolon in the CSV import dialog (Get Data → Text/CSV → Edit → Delimiter).",
       "why": "French/European CSVs use semicolons. Power BI defaults to comma. This is the most common CSV import problem."
+    },
+    {
+      "id": "pc11",
+      "t": "pbi.import",
+      "src": "ch3",
+      "ls": 0,
+      "lab": 3,
+      "ans": null,
+      "q": "Which button should you almost always click when importing a file — Load or Transform Data?",
+      "code": null,
+      "out": "Transform Data — opens Power Query Editor so you clean and check types before the data loads into the model.",
+      "why": "Loading without checking often causes type errors and broken calculations that are harder to fix later."
+    },
+    {
+      "id": "pc12",
+      "t": "pbi.import",
+      "src": "ch3",
+      "ls": 4,
+      "lab": 3,
+      "ans": null,
+      "q": "What is the difference between Close & Apply and Close in Power Query Editor?",
+      "code": null,
+      "out": "Close & Apply → saves all steps, loads cleaned data into model.\nClose → discards all changes since last apply.",
+      "why": "Closing without Apply is the most common beginner mistake — all cleaning work is lost."
+    },
+    {
+      "id": "pc13",
+      "t": "pbi.pq",
+      "src": "ch4",
+      "ls": 1,
+      "lab": 4,
+      "ans": null,
+      "q": "Name 3 things you can do with a step in Applied Steps.",
+      "code": null,
+      "out": "1. Click it → preview data at that point\n2. Delete it (✕) → remove the transformation\n3. Rename it → double-click the name",
+      "why": "Applied Steps is the undo/debug history of Power Query."
+    },
+    {
+      "id": "pc14",
+      "t": "pbi.clean",
+      "src": "ch4",
+      "ls": 4,
+      "lab": 4,
+      "ans": null,
+      "q": "What is the difference between Remove Blank Rows and filtering nulls on a specific column?",
+      "code": null,
+      "out": "Remove Blank Rows: removes rows where ALL cells are null.\nFilter on column: removes rows where THAT column is null.\nUse Filter when a key column has nulls but other columns don't.",
+      "why": "Remove Blank Rows misses rows with one null in a critical column."
+    },
+    {
+      "id": "pc15",
+      "t": "pbi.transform",
+      "src": "ch5",
+      "ls": 0,
+      "lab": 5,
+      "ans": null,
+      "q": "What is wide format vs long format? Which does Power BI prefer?",
+      "code": null,
+      "out": "Wide: each category value is a separate column (months as columns).\nLong: one column for category name, one for value.\nPower BI prefers long — easier to filter, group, and chart.",
+      "why": "Wide format makes month filtering impossible without unpivoting first."
+    },
+    {
+      "id": "pc16",
+      "t": "pbi.transform",
+      "src": "ch5",
+      "ls": 1,
+      "lab": 5,
+      "ans": null,
+      "q": "Describe the steps to unpivot the month columns in unpivot.csv.",
+      "code": "Product | January | February | March | April",
+      "out": "1. Ctrl+click January, February, March, April\n2. Right-click → Unpivot Columns\n3. Rename Attribute → Month\n4. Rename Value → Sales\nResult: 20 rows (5 products × 4 months)",
+      "why": "Select ONLY month columns — do not include Product or it also becomes rows."
+    },
+    {
+      "id": "pc17",
+      "t": "pbi.transform",
+      "src": "ch5",
+      "ls": 2,
+      "lab": 5,
+      "ans": null,
+      "q": "Describe the steps to pivot pivot.csv so each month becomes a column.",
+      "code": "Product | Month | Sales",
+      "out": "1. Click the Month column\n2. Transform → Pivot Column\n3. Values Column = Sales, Aggregate = Sum\nResult: 4 rows, one column per month",
+      "why": "Pivot on Month (the column whose values become headers), not on Sales."
+    },
+    {
+      "id": "pc18",
+      "t": "pbi.transform",
+      "src": "ch5",
+      "ls": 3,
+      "lab": 5,
+      "ans": null,
+      "q": "After transposing transpose.csv, what two steps are always needed?",
+      "code": null,
+      "out": "1. Home → Use First Row as Headers\n2. Rename Column1 to 'Subject'",
+      "why": "Transpose moves original column headers to row 1. Use First Row as Headers restores them."
     }
   ],
   "mcq": [
@@ -638,6 +734,149 @@
         "Decimal Number — to allow partial days"
       ],
       "why": "Power BI's Date type understands calendar hierarchy (year, quarter, month, day) and enables time-intelligence DAX functions. Storing dates as Text loses all of this."
+    },
+    {
+      "id": "pq15",
+      "t": "pbi.import",
+      "q": "All data from your CSV appears in one column separated by semicolons. What do you change?",
+      "code": null,
+      "ok": "The delimiter in the import dialog — change Comma to Semicolon",
+      "bad": [
+        "The file encoding to UTF-8",
+        "Use Transform Data instead of Load",
+        "Delete the first row in Power Query"
+      ],
+      "why": "French/European CSVs use semicolons. Power BI defaults to comma. Change the delimiter in the import preview dialog."
+    },
+    {
+      "id": "pq16",
+      "t": "pbi.import",
+      "q": "What is the difference between Load and Transform Data when importing?",
+      "code": null,
+      "ok": "Load imports immediately with auto-detected types; Transform Data opens Power Query to clean first",
+      "bad": [
+        "They are identical",
+        "Load is faster and always correct",
+        "Transform Data only works for CSVs"
+      ],
+      "why": "Always use Transform Data so you control types and structure before the data enters the model."
+    },
+    {
+      "id": "pq17",
+      "t": "pbi.import",
+      "q": "After finishing transformations in Power Query Editor, what do you click?",
+      "code": null,
+      "ok": "Close & Apply (Home tab)",
+      "bad": [
+        "Save (Ctrl+S)",
+        "Apply Steps",
+        "Close — it auto-saves"
+      ],
+      "why": "Close & Apply commits all steps and loads the cleaned data. Close alone discards your changes."
+    },
+    {
+      "id": "pq18",
+      "t": "pbi.pq",
+      "q": "You click a step in Applied Steps. What happens?",
+      "code": null,
+      "ok": "The data preview updates to show the data at that point in the transformation chain",
+      "bad": [
+        "The step is deleted",
+        "The formula bar clears",
+        "Power Query reruns from the beginning"
+      ],
+      "why": "Clicking a step is non-destructive. It previews the historical state at that step."
+    },
+    {
+      "id": "pq19",
+      "t": "pbi.pq",
+      "q": "You delete a step that a later step depends on. What happens?",
+      "code": null,
+      "ok": "The later step breaks with a formula error",
+      "bad": [
+        "Power Query auto-updates the later step",
+        "The later step is also deleted",
+        "Nothing — steps are independent"
+      ],
+      "why": "Each M step references the previous step by name. Deleting a step breaks all steps that reference it."
+    },
+    {
+      "id": "pq20",
+      "t": "pbi.clean",
+      "q": "A Product column has 'laptop', 'Laptop', 'LAPTOP'. What Power Query operation standardizes them?",
+      "code": null,
+      "ok": "Transform → Format → Capitalize Each Word (or Lowercase)",
+      "bad": [
+        "Home → Remove Duplicates",
+        "Add Column → Conditional Column",
+        "Replace Values three times manually"
+      ],
+      "why": "Format → Capitalize Each Word converts all variants to 'Laptop' in one step."
+    },
+    {
+      "id": "pq21",
+      "t": "pbi.clean",
+      "q": "Remove Blank Rows does not remove a row that has null in Sales but a value in Product. Why?",
+      "code": null,
+      "ok": "Remove Blank Rows only removes rows where ALL columns are null",
+      "bad": [
+        "It doesn't work on numeric columns",
+        "The null must be explicitly typed as null first",
+        "Power BI treats empty string as not-null"
+      ],
+      "why": "Use Filter Rows on the Sales column specifically to remove rows with null Sales."
+    },
+    {
+      "id": "pq22",
+      "t": "pbi.transform",
+      "q": "unpivot.csv has months as column headers. What operation do you apply?",
+      "code": "Product | January | February | March | April\nLaptop  |      10 |       15 |    12 |    18",
+      "ok": "Unpivot — select the month columns and unpivot them into rows",
+      "bad": [
+        "Pivot — select Product column and pivot it",
+        "Transpose — flip the table",
+        "Group By — group by Product"
+      ],
+      "why": "Month names are values, not attributes. Unpivot makes them rows so you can filter by Month in charts."
+    },
+    {
+      "id": "pq23",
+      "t": "pbi.transform",
+      "q": "pivot.csv is in long format (Product, Month, Sales). You want each month as a column. What do you do?",
+      "code": "Product | Month    | Sales\nLaptop  | January  |    10",
+      "ok": "Select Month column → Transform → Pivot Column → Values Column = Sales",
+      "bad": [
+        "Select Sales column → Unpivot Columns",
+        "Transform → Transpose",
+        "Add Column → Custom Column with IF"
+      ],
+      "why": "Pivot takes a category column (Month) and spreads its unique values into new columns."
+    },
+    {
+      "id": "pq24",
+      "t": "pbi.transform",
+      "q": "After transposing, the first row contains student names but is treated as data. How do you fix it?",
+      "code": null,
+      "ok": "Home → Use First Row as Headers",
+      "bad": [
+        "Rename each column manually",
+        "Home → Remove Top Rows (1)",
+        "Add Column → Index Column"
+      ],
+      "why": "Use First Row as Headers promotes the first data row to become column names — always needed after Transpose."
+    },
+    {
+      "id": "pq25",
+      "t": "pbi.transform",
+      "q": "When should you use Transpose instead of Pivot or Unpivot?",
+      "code": null,
+      "ok": "When the entire table is rotated — what should be rows are columns and vice versa",
+      "bad": [
+        "When column headers are category values",
+        "When a category column should spread into headers",
+        "When you want to aggregate by group"
+      ],
+      "why": "Transpose flips the whole table. Unpivot turns column headers into rows. Pivot turns row values into headers."
     }
   ],
   "boards": [
@@ -857,6 +1096,151 @@
           ]
         }
       ]
+    },
+    {
+      "id": "pbi3",
+      "ch": "ch5",
+      "t": "pbi.transform",
+      "title": "Pivot, Unpivot, Transpose — with your professor's actual CSV data",
+      "steps": [
+        {
+          "say": "Your professor gave you three CSV files, each designed for one specific transformation. Let's work through each one — not just the how, but the why.",
+          "add": [
+            [
+              "h",
+              "Three files, three operations"
+            ],
+            [
+              "w",
+              "{b:unpivot.csv} → needs Unpivot (wide→long). Months are column headers — they're values."
+            ],
+            [
+              "w",
+              "{b:pivot.csv} → needs Pivot (long→wide). Months are row values — spread them into columns."
+            ],
+            [
+              "w",
+              "{b:transpose.csv} → needs Transpose. The whole table is oriented the wrong way."
+            ],
+            [
+              "sticky",
+              "The filenames tell you the\noperation. In real TPs\nyou'll need to judge yourself\nfrom the data shape.",
+              "b"
+            ]
+          ]
+        },
+        {
+          "say": "Start with unpivot.csv. Months are column headers — but months are values, not attributes. Here's the problem and the fix.",
+          "add": [
+            [
+              "h",
+              "unpivot.csv — Unpivot months into rows"
+            ],
+            [
+              "code",
+              "BEFORE (wide — 5 rows):\nProduct  | January | February | March | April\nLaptop   |      10 |       15 |    12 |    18\nMouse    |      30 |       25 |    40 |    35\n\nAFTER (long — 20 rows):\nProduct  | Month    | Sales\nLaptop   | January  |    10\nLaptop   | February |    15\nMouse    | January  |    30",
+              {}
+            ],
+            [
+              "w",
+              "{b:Steps:} Ctrl+click January, February, March, April → right-click → Unpivot Columns → rename Attribute→Month, Value→Sales."
+            ],
+            [
+              "sticky",
+              "Select ONLY the month columns.\nIf you include Product,\nit also becomes rows — wrong.",
+              "p"
+            ],
+            [
+              "try",
+              {
+                "q": "After unpivoting (5 products × 4 months), how many rows does the result have?",
+                "code": null,
+                "ok": "20 rows — one per product-month combination",
+                "bad": [
+                  "5 rows — one per product",
+                  "4 rows — one per month",
+                  "9 rows — 5 + 4"
+                ],
+                "why": "Unpivot creates one row per combination. 5 products × 4 months = 20 rows."
+              }
+            ]
+          ]
+        },
+        {
+          "say": "Now pivot.csv — already long format, but you need months as columns for a comparison table.",
+          "add": [
+            [
+              "h",
+              "pivot.csv — Pivot months into columns"
+            ],
+            [
+              "code",
+              "BEFORE (long — 12 rows):\nProduct  | Month    | Sales\nLaptop   | January  |    10\nLaptop   | February |    15\nMouse    | January  |    30\n\nAFTER (wide — 4 rows):\nProduct  | January | February | March\nLaptop   |      10 |       15 |    12\nMouse    |      30 |       25 |    40",
+              {}
+            ],
+            [
+              "w",
+              "{b:Steps:} Click Month column → Transform → Pivot Column → Values Column: Sales → OK."
+            ],
+            [
+              "sticky",
+              "Pivot on the column whose\nvalues become headers (Month).\nNot on the values column (Sales).",
+              "y"
+            ],
+            [
+              "try",
+              {
+                "q": "When would you choose 'Don't Aggregate' in the Pivot dialog?",
+                "code": null,
+                "ok": "When each product-month combination appears exactly once — no duplicates",
+                "bad": [
+                  "Always — aggregation is optional",
+                  "When the values column contains text",
+                  "When you want to sum all values"
+                ],
+                "why": "Don't Aggregate fails if any combination appears more than once. Use Sum when duplicates exist."
+              }
+            ]
+          ]
+        },
+        {
+          "say": "Finally transpose.csv — subjects should be rows but they're currently columns. Transpose flips the whole table.",
+          "add": [
+            [
+              "h",
+              "transpose.csv — Transpose the table"
+            ],
+            [
+              "code",
+              "BEFORE:\nStudent | Math | Physics | Computer Science\nAhmed   |   15 |      14 |               18\nSara    |   17 |      16 |               19\n\nAFTER (then promote headers):\nSubject          | Ahmed | Sara | Youssef | Mariam\nMath             |    15 |   17 |      12 |     18\nPhysics          |    14 |   16 |      13 |     17\nComputer Science |    18 |   19 |      15 |     20",
+              {}
+            ],
+            [
+              "w",
+              "{b:Steps:} Transform → Transpose → Home → Use First Row as Headers → rename Column1 to Subject."
+            ],
+            [
+              "sticky",
+              "After every Transpose:\nUse First Row as Headers.\nThe original column names\nmove to row 1 during transpose.",
+              "g"
+            ],
+            [
+              "try",
+              {
+                "q": "After transposing, the first column is named 'Column1' and contains subject names. What two steps fix this?",
+                "code": null,
+                "ok": "Use First Row as Headers (promotes row 1), then rename Column1 to 'Subject'",
+                "bad": [
+                  "Delete Column1, then add a new column",
+                  "Transpose again to undo",
+                  "Replace Values: Column1 → Subject"
+                ],
+                "why": "Transpose moves original headers to row 1. Use First Row as Headers promotes them back. Then rename the leftmost column."
+              }
+            ]
+          ]
+        }
+      ]
     }
   ],
   "missions": [
@@ -938,6 +1322,110 @@
             "ch2"
           ],
           "n": 5
+        }
+      ]
+    },
+    {
+      "title": "Importing Data",
+      "sub": "Get Data, CSV, Excel, Web, Load vs Transform",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 5 import lessons",
+          "ch": "ch3",
+          "from": 0,
+          "to": 4
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 5 questions",
+          "pick": {
+            "ts": [
+              "pbi.import"
+            ]
+          },
+          "n": 5,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 2 cards",
+          "chs": [
+            "ch3"
+          ],
+          "n": 2
+        }
+      ]
+    },
+    {
+      "title": "Power Query Editor — cleaning data",
+      "sub": "Applied Steps, column ops, row ops, replace values",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 6 Power Query lessons",
+          "ch": "ch4",
+          "from": 0,
+          "to": 5
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 5 questions",
+          "pick": {
+            "ts": [
+              "pbi.pq",
+              "pbi.clean"
+            ]
+          },
+          "n": 5,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 2 cards",
+          "chs": [
+            "ch4"
+          ],
+          "n": 2
+        }
+      ]
+    },
+    {
+      "title": "Pivot, Unpivot, Transpose",
+      "sub": "wide vs long, your professor's 3 CSV files",
+      "tasks": [
+        {
+          "k": "read",
+          "label": "Read all 5 transformation lessons",
+          "ch": "ch5",
+          "from": 0,
+          "to": 4
+        },
+        {
+          "k": "boards",
+          "label": "Teacher mode: board — Pivot/Unpivot/Transpose",
+          "ids": [
+            "pbi3"
+          ]
+        },
+        {
+          "k": "quiz",
+          "label": "Quiz: 7 questions",
+          "pick": {
+            "ts": [
+              "pbi.transform"
+            ]
+          },
+          "n": 7,
+          "pass": 0.6
+        },
+        {
+          "k": "cards",
+          "label": "Flashcards: 4 cards",
+          "chs": [
+            "ch5"
+          ],
+          "n": 4
         }
       ]
     }
